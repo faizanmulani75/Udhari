@@ -27,7 +27,10 @@ const RESEND_COOLDOWN = Config.OTP_RESEND_COOLDOWN;
 
 const OtpScreen = ({ navigation, route }) => {
   const phone = route?.params?.phone || "";
-  const { verifyOtp, sendOtp, isLoading, error, clearError, resetOtpFlow } =
+  const email = route?.params?.email || "";
+  const isRegister = route?.params?.isRegister || false;
+
+  const { verifyOtp, verifyRegister, sendOtp, register, isLoading, error, clearError, resetOtpFlow } =
     useAuthStore();
 
   const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(""));
@@ -168,7 +171,9 @@ const OtpScreen = ({ navigation, route }) => {
       return;
     }
 
-    const success = await verifyOtp(otpString);
+    const success = isRegister
+      ? await verifyRegister(otpString)
+      : await verifyOtp(otpString);
 
     if (success) {
       // Celebrate with a scale pulse
@@ -196,7 +201,11 @@ const OtpScreen = ({ navigation, route }) => {
     setCountdown(RESEND_COOLDOWN);
     setFocusedIndex(0);
 
-    await sendOtp(phone);
+    if (isRegister) {
+      await register(null, null, email, null);
+    } else {
+      await sendOtp(phone);
+    }
     inputRefs.current[0]?.focus();
   };
 
@@ -252,10 +261,10 @@ const OtpScreen = ({ navigation, route }) => {
             <View style={styles.otpIconCircle}>
               <Text style={styles.otpIcon}>🔐</Text>
             </View>
-            <Text style={styles.title}>Verify your number</Text>
+            <Text style={styles.title}>{isRegister ? "Verify your email" : "Verify your number"}</Text>
             <Text style={styles.subtitle}>
               We sent a {OTP_LENGTH}-digit code to{"\n"}
-              <Text style={styles.phoneHighlight}>{maskedPhone}</Text>
+              <Text style={styles.phoneHighlight}>{isRegister ? email : maskedPhone}</Text>
             </Text>
           </View>
 

@@ -4,7 +4,12 @@
 const Config = {
   // API base URL — change to your backend address
   // For local development with Expo: use your machine's LAN IP, not localhost
-  API_URL: "http://192.168.1.109:5050/api/v1", //5g
+  API_URL: "https://udhari-ajw3.onrender.com/api/v1",
+
+  // Live web portal base URL (for production)
+  PORTAL_URL: "https://udhari-tracking.vercel.app",
+  // Local dev portal URL
+  // PORTAL_URL: "http://192.168.1.109:3000",
 
   // API_URL: "http://192.168.1.108:5050/api/v1",
 

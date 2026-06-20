@@ -38,7 +38,7 @@ const createShop = async (authId, userPhone, data) => {
   const existingUser = await prisma.user.findFirst({
     where: { authId, deletedAt: null },
   });
-  if (existingUser) {
+  if (existingUser && existingUser.shopId) {
     throw ApiError.conflict("User onboarding has already been completed for this account");
   }
 
@@ -66,17 +66,29 @@ const createShop = async (authId, userPhone, data) => {
       },
     });
 
-    // B. Create the User (owner)
-    const user = await tx.user.create({
-      data: {
-        shopId: shop.id,
-        authId,
-        name: ownerName,
-        phone: userPhone,
-        email: email || null,
-        role: "owner",
-      },
-    });
+    // B. Create or Update the User (owner)
+    let user;
+    if (existingUser) {
+      user = await tx.user.update({
+        where: { id: existingUser.id },
+        data: {
+          shopId: shop.id,
+          name: ownerName,
+          phone: userPhone,
+        },
+      });
+    } else {
+      user = await tx.user.create({
+        data: {
+          shopId: shop.id,
+          authId,
+          name: ownerName,
+          phone: userPhone,
+          email: email || null,
+          role: "owner",
+        },
+      });
+    }
 
     // C. Provision default FREE subscription plan
     await tx.subscription.create({

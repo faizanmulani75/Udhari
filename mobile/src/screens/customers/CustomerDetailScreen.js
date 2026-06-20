@@ -186,7 +186,7 @@ const CustomerDetailScreen = ({ route, navigation }) => {
     const formattedBal = formatCurrency(Math.abs(balanceVal), currencyCode);
     const shopName = shop?.name || "our shop";
     const name = selectedCustomer.name;
-    const portalUrl = `http://localhost:3000/customer/${selectedCustomer.qrToken || selectedCustomer.id}`;
+    const portalUrl = `${Config.PORTAL_URL}/customer/${selectedCustomer.qrToken || selectedCustomer.id}`;
 
     let message = "";
     if (balanceVal > 0) {
@@ -212,7 +212,7 @@ const CustomerDetailScreen = ({ route, navigation }) => {
 
   // Shares a link to the customer portal
   const handleSharePortalLink = async () => {
-    const portalUrl = `http://localhost:3000/customer/${selectedCustomer?.qrToken || selectedCustomer?.id}`;
+    const portalUrl = `${Config.PORTAL_URL}/customer/${selectedCustomer?.qrToken || selectedCustomer?.id}`;
     try {
       await Share.share({
         message: `Hi ${selectedCustomer?.name}, you can view your real-time ledger balance and transaction history here: ${portalUrl}`,
@@ -237,7 +237,7 @@ const CustomerDetailScreen = ({ route, navigation }) => {
   const balanceLabel = isNegative ? "Advance (Jama)" : "Udhari (Due Balance)";
 
   // QR Code URL for the public customer portal
-  const portalLink = `http://localhost:3000/customer/${selectedCustomer.qrToken || selectedCustomer.id}`;
+  const portalLink = `${Config.PORTAL_URL}/customer/${selectedCustomer.qrToken || selectedCustomer.id}`;
   const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(portalLink)}`;
 
   return (

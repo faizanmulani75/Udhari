@@ -35,8 +35,38 @@ const getProfile = catchAsync(async (req, res) => {
   return ApiResponse.success(res, "Profile fetched successfully", result);
 });
 
+/**
+ * Register a new user (request OTP).
+ */
+const register = catchAsync(async (req, res) => {
+  const { name, phone, email, password } = req.body;
+  const result = await authService.registerRequest(name, phone, email, password);
+  return ApiResponse.success(res, result.message, null);
+});
+
+/**
+ * Verify OTP and complete registration.
+ */
+const registerVerify = catchAsync(async (req, res) => {
+  const { email, otp } = req.body;
+  const result = await authService.registerVerify(email, otp);
+  return ApiResponse.success(res, "Registration successful", result);
+});
+
+/**
+ * Log in with email/phone and password.
+ */
+const login = catchAsync(async (req, res) => {
+  const { identifier, password } = req.body;
+  const result = await authService.login(identifier, password);
+  return ApiResponse.success(res, "Login successful", result);
+});
+
 module.exports = {
   sendOtp,
   verifyOtp,
   getProfile,
+  register,
+  registerVerify,
+  login,
 };

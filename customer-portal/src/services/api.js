@@ -4,9 +4,16 @@
 
 import axios from "axios";
 
-const API_BASE_URL = 
+let API_BASE_URL = 
   process.env.NEXT_PUBLIC_API_URL || 
-  "http://localhost:5050/api/v1";
+  "https://udhari-ajw3.onrender.com/api/v1";
+
+if (typeof window !== "undefined") {
+  const hostname = window.location.hostname;
+  if (hostname !== "localhost" && hostname !== "127.0.0.1" && API_BASE_URL.includes("localhost")) {
+    API_BASE_URL = API_BASE_URL.replace("localhost", hostname);
+  }
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,

@@ -5,6 +5,7 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginScreen from "../screens/auth/LoginScreen";
+import RegisterScreen from "../screens/auth/RegisterScreen";
 import OtpScreen from "../screens/auth/OtpScreen";
 import Colors from "../constants/colors";
 
@@ -19,7 +20,8 @@ const AuthNavigator = () => {
         animation: "slide_from_right",
       }}
     >
-      <Stack.Screen name="LoginScreen" component={LoginScreen} />
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="OtpScreen" component={OtpScreen} />
     </Stack.Navigator>
   );

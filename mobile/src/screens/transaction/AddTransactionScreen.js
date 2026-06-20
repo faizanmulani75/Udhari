@@ -179,10 +179,8 @@ const AddTransactionScreen = ({ route, navigation }) => {
   useSpeechRecognitionEvent("start", () => setIsListening(true));
   useSpeechRecognitionEvent("end", () => setIsListening(false));
   useSpeechRecognitionEvent("result", (event) => {
-    if (event.results) {
-      // Map all transcript segments and join them with space for continuous dictation
-      const transcript = event.results.map((r) => r.transcript).join(" ");
-      setDescription(transcript);
+    if (event.results && event.results[0]) {
+      setDescription(event.results[0].transcript);
     }
   });
   useSpeechRecognitionEvent("error", (event) => {
@@ -217,8 +215,9 @@ const AddTransactionScreen = ({ route, navigation }) => {
         }
         setIsListening(true);
         await ExpoSpeechRecognitionModule.start({
-          lang: "hi-IN", // Defaults to Hindi/India-friendly locales to help shopkeepers
+          lang: "en-IN", // Set to English (India-friendly locale) to help shopkeepers
           interimResults: true,
+          maxAlternatives: 1, // Only return the single best transcription match
           continuous: true, // Allow continuous listening without cutting off during pauses
         });
       } catch (err) {

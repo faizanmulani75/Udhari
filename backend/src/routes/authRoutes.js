@@ -7,9 +7,12 @@ const authMiddleware = require("../middleware/auth");
 
 const router = express.Router();
 
-// Public routes (mobile app login only)
+// Public routes
 router.post("/send-otp", authController.sendOtp);
 router.post("/verify-otp", authController.verifyOtp);
+router.post("/register", authController.register);
+router.post("/register/verify", authController.registerVerify);
+router.post("/login", authController.login);
 
 // Protected routes
 router.get("/me", authMiddleware, authController.getProfile);

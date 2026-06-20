@@ -19,6 +19,7 @@ const useAuthStore = create((set, get) => ({
   // OTP flow state
   otpSent: false,
   otpPhone: null,
+  otpEmail: null,
 
   // ── Actions ────────────────────────────────────────────
 
@@ -130,6 +131,7 @@ const useAuthStore = create((set, get) => ({
       isAuthenticated: false,
       otpSent: false,
       otpPhone: null,
+      otpEmail: null,
       error: null,
     });
   },
@@ -141,8 +143,98 @@ const useAuthStore = create((set, get) => ({
     set({
       otpSent: false,
       otpPhone: null,
+      otpEmail: null,
       error: null,
     });
+  },
+
+  /**
+   * Request registration email verification.
+   */
+  register: async (name, phone, email, password) => {
+    set({ isLoading: true, error: null });
+    try {
+      await authService.register(name, phone, email, password);
+      set({
+        otpSent: true,
+        otpEmail: email,
+        isLoading: false,
+      });
+      return true;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error.response?.data?.message || error.message || "Failed to send registration OTP",
+      });
+      return false;
+    }
+  },
+
+  /**
+   * Verify registration email OTP and sign in.
+   */
+  verifyRegister: async (otp) => {
+    const { otpEmail } = get();
+    if (!otpEmail) {
+      set({ error: "Email not set. Please try registering again." });
+      return false;
+    }
+    set({ isLoading: true, error: null });
+    try {
+      const response = await authService.verifyRegister(otpEmail, otp);
+      const { accessToken, user, shop } = response.data;
+
+      // Persist to AsyncStorage
+      await authService.persistAuth({ accessToken, user, shop });
+
+      set({
+        accessToken,
+        user,
+        shopId: shop?.id || null,
+        isAuthenticated: true,
+        isLoading: false,
+        otpSent: false,
+        otpEmail: null,
+        error: null,
+      });
+      return true;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error.response?.data?.message || error.message || "Invalid OTP. Please try again.",
+      });
+      return false;
+    }
+  },
+
+  /**
+   * Log in using email/phone and password.
+   */
+  login: async (identifier, password) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await authService.login(identifier, password);
+      const { accessToken, user, shop } = response.data;
+
+      // Persist to AsyncStorage
+      await authService.persistAuth({ accessToken, user, shop });
+
+      set({
+        accessToken,
+        user,
+        shopId: shop?.id || null,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+      });
+      return true;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error.response?.data?.message || error.message || "Login failed. Check credentials.",
+      });
+      return false;
+    }
   },
 
   /**

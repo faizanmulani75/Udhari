@@ -1,6 +1,6 @@
 // src/screens/auth/LoginScreen.js
-// Phone number input screen — first step of the OTP login flow.
-// Premium dark UI with animated gradient, subtle glow, and smooth transitions.
+// Login screen for credentials-based authentication.
+// Premium dark UI with animated entrance, subtle glow, and smooth transitions.
 
 import React, { useState, useRef, useEffect } from "react";
 import {
@@ -22,18 +22,19 @@ import useAuthStore from "../../store/authStore";
 const { width, height } = Dimensions.get("window");
 
 const LoginScreen = ({ navigation }) => {
-  const [phone, setPhone] = useState("");
-  const [countryCode, setCountryCode] = useState("+91");
-  const { sendOtp, isLoading, error, clearError } = useAuthStore();
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  
+  const [isIdentifierFocused, setIsIdentifierFocused] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+
+  const { login, isLoading, error, clearError } = useAuthStore();
 
   // ── Animations ──
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
   const logoScale = useRef(new Animated.Value(0.8)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
-  const inputFocusAnim = useRef(new Animated.Value(0)).current;
-
-  const inputRef = useRef(null);
 
   useEffect(() => {
     // Entrance animation sequence
@@ -76,51 +77,25 @@ const LoginScreen = ({ navigation }) => {
 
   // Clear error when user starts typing
   useEffect(() => {
-    if (error && phone.length > 0) {
+    if (error && (identifier.length > 0 || password.length > 0)) {
       clearError();
     }
-  }, [phone]);
+  }, [identifier, password]);
 
-  const handleInputFocus = () => {
-    Animated.timing(inputFocusAnim, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: false,
-    }).start();
-  };
-
-  const handleInputBlur = () => {
-    Animated.timing(inputFocusAnim, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: false,
-    }).start();
-  };
-
-  const handleSendOtp = async () => {
-    const cleanPhone = phone.replace(/\s/g, "");
-
-    if (cleanPhone.length < 10) {
-      useAuthStore.setState({
-        error: "Please enter a valid 10-digit phone number",
-      });
+  const handleLogin = async () => {
+    if (!identifier.trim()) {
+      useAuthStore.setState({ error: "Please enter your mobile number or email" });
+      return;
+    }
+    if (!password) {
+      useAuthStore.setState({ error: "Please enter your password" });
       return;
     }
 
-    const fullPhone = `${countryCode}${cleanPhone}`;
-    const success = await sendOtp(fullPhone);
-
-    if (success) {
-      navigation.navigate("OtpScreen", { phone: fullPhone });
-    }
+    await login(identifier.trim(), password);
   };
 
-  const isPhoneValid = phone.replace(/\s/g, "").length >= 10;
-
-  const inputBorderColor = inputFocusAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [Colors.border, Colors.primaryLight],
-  });
+  const isFormValid = identifier.trim().length > 0 && password.length >= 6;
 
   const glowOpacity = glowAnim.interpolate({
     inputRange: [0, 1],
@@ -132,26 +107,14 @@ const LoginScreen = ({ navigation }) => {
       <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
 
       {/* Background glow orb */}
-      <Animated.View
-        style={[
-          styles.glowOrb,
-          { opacity: glowOpacity },
-        ]}
-      />
+      <Animated.View style={[styles.glowOrb, { opacity: glowOpacity }]} />
       <Animated.View style={[styles.glowOrbSecondary, { opacity: glowOpacity }]} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
-        <Animated.View
-          style={[
-            styles.content,
-            {
-              opacity: fadeAnim,
-            },
-          ]}
-        >
+        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
           {/* ── Logo / Brand ── */}
           <Animated.View
             style={[
@@ -173,40 +136,52 @@ const LoginScreen = ({ navigation }) => {
               { transform: [{ translateY: slideAnim }] },
             ]}
           >
-            <Text style={styles.formTitle}>Login to your account</Text>
+            <Text style={styles.formTitle}>Welcome Back</Text>
             <Text style={styles.formSubtitle}>
-              Enter your phone number to receive a verification code
+              Log in to access your dashboard
             </Text>
 
-            {/* Phone Input */}
-            <Animated.View
+            {/* Identifier (Email/Phone) Input */}
+            <View
               style={[
                 styles.inputWrapper,
-                { borderColor: inputBorderColor },
+                isIdentifierFocused && styles.inputFocused,
               ]}
             >
-              {/* Country Code */}
-              <TouchableOpacity style={styles.countryCodeBox}>
-                <Text style={styles.flag}>🇮🇳</Text>
-                <Text style={styles.countryCodeText}>{countryCode}</Text>
-                <Text style={styles.divider}>│</Text>
-              </TouchableOpacity>
-
-              {/* Phone Number */}
               <TextInput
-                ref={inputRef}
-                style={styles.phoneInput}
-                placeholder="Enter phone number"
+                style={styles.textInput}
+                placeholder="Mobile number or Email"
                 placeholderTextColor={Colors.textPlaceholder}
-                keyboardType="phone-pad"
-                maxLength={10}
-                value={phone}
-                onChangeText={setPhone}
-                onFocus={handleInputFocus}
-                onBlur={handleInputBlur}
-                autoFocus={false}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={identifier}
+                onChangeText={setIdentifier}
+                onFocus={() => setIsIdentifierFocused(true)}
+                onBlur={() => setIsIdentifierFocused(false)}
               />
-            </Animated.View>
+            </View>
+
+            {/* Password Input */}
+            <View
+              style={[
+                styles.inputWrapper,
+                isPasswordFocused && styles.inputFocused,
+              ]}
+            >
+              <TextInput
+                style={styles.textInput}
+                placeholder="Password"
+                placeholderTextColor={Colors.textPlaceholder}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={password}
+                onChangeText={setPassword}
+                onFocus={() => setIsPasswordFocused(true)}
+                onBlur={() => setIsPasswordFocused(false)}
+              />
+            </View>
 
             {/* Error Message */}
             {error && (
@@ -216,29 +191,33 @@ const LoginScreen = ({ navigation }) => {
               </View>
             )}
 
-            {/* Send OTP Button */}
+            {/* Login Button */}
             <TouchableOpacity
               style={[
                 styles.button,
-                !isPhoneValid && styles.buttonDisabled,
+                (!isFormValid || isLoading) && styles.buttonDisabled,
               ]}
-              onPress={handleSendOtp}
-              disabled={isLoading || !isPhoneValid}
+              onPress={handleLogin}
+              disabled={isLoading || !isFormValid}
               activeOpacity={0.85}
             >
               {isLoading ? (
                 <ActivityIndicator color={Colors.white} size="small" />
               ) : (
-                <Text style={styles.buttonText}>Send OTP</Text>
+                <Text style={styles.buttonText}>Log In</Text>
               )}
             </TouchableOpacity>
 
-            {/* Terms */}
-            <Text style={styles.termsText}>
-              By continuing, you agree to our{" "}
-              <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
-              <Text style={styles.termsLink}>Privacy Policy</Text>
-            </Text>
+            {/* Sign Up Link */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Register")}
+              style={styles.signupContainer}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.signupText}>
+                Don't have an account? <Text style={styles.signupLink}>Sign Up</Text>
+              </Text>
+            </TouchableOpacity>
           </Animated.View>
         </Animated.View>
       </KeyboardAvoidingView>
@@ -279,11 +258,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 28,
   },
-
-  // ── Brand ──
   brandContainer: {
     alignItems: "center",
-    marginBottom: 48,
+    marginBottom: 36,
   },
   logoCircle: {
     width: 80,
@@ -316,8 +293,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
     letterSpacing: 0.3,
   },
-
-  // ── Form ──
   formContainer: {
     backgroundColor: Colors.bgCard,
     borderRadius: 24,
@@ -337,49 +312,25 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     lineHeight: 20,
   },
-
-  // ── Input ──
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Colors.bgInput,
     borderRadius: 16,
     borderWidth: 1.5,
-    paddingHorizontal: 4,
+    borderColor: Colors.border,
+    paddingHorizontal: 16,
     height: 56,
     marginBottom: 16,
   },
-  countryCodeBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    height: "100%",
+  inputFocused: {
+    borderColor: Colors.primaryLight,
   },
-  flag: {
-    fontSize: 20,
-    marginRight: 6,
-  },
-  countryCodeText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.textPrimary,
-    marginRight: 8,
-  },
-  divider: {
-    color: Colors.border,
-    fontSize: 20,
-    fontWeight: "200",
-  },
-  phoneInput: {
+  textInput: {
     flex: 1,
-    fontSize: 17,
-    fontWeight: "500",
+    fontSize: 16,
     color: Colors.textPrimary,
-    paddingHorizontal: 8,
-    letterSpacing: 1,
   },
-
-  // ── Error ──
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -399,8 +350,6 @@ const styles = StyleSheet.create({
     color: Colors.error,
     lineHeight: 18,
   },
-
-  // ── Button ──
   button: {
     backgroundColor: Colors.primary,
     height: 54,
@@ -412,7 +361,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 12,
     elevation: 8,
-    marginBottom: 20,
+    marginVertical: 12,
   },
   buttonDisabled: {
     backgroundColor: Colors.bgElevated,
@@ -425,17 +374,18 @@ const styles = StyleSheet.create({
     color: Colors.white,
     letterSpacing: 0.5,
   },
-
-  // ── Terms ──
-  termsText: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    textAlign: "center",
-    lineHeight: 18,
+  signupContainer: {
+    alignItems: "center",
+    marginTop: 12,
+    paddingVertical: 8,
   },
-  termsLink: {
+  signupText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  signupLink: {
     color: Colors.primaryLight,
-    fontWeight: "500",
+    fontWeight: "700",
   },
 });
 

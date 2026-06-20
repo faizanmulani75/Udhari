@@ -3324,6 +3324,7 @@ export namespace Prisma {
     name: string | null
     phone: string | null
     email: string | null
+    passwordHash: string | null
     role: string | null
     isActive: boolean | null
     deletedAt: Date | null
@@ -3338,6 +3339,7 @@ export namespace Prisma {
     name: string | null
     phone: string | null
     email: string | null
+    passwordHash: string | null
     role: string | null
     isActive: boolean | null
     deletedAt: Date | null
@@ -3352,6 +3354,7 @@ export namespace Prisma {
     name: number
     phone: number
     email: number
+    passwordHash: number
     role: number
     isActive: number
     deletedAt: number
@@ -3368,6 +3371,7 @@ export namespace Prisma {
     name?: true
     phone?: true
     email?: true
+    passwordHash?: true
     role?: true
     isActive?: true
     deletedAt?: true
@@ -3382,6 +3386,7 @@ export namespace Prisma {
     name?: true
     phone?: true
     email?: true
+    passwordHash?: true
     role?: true
     isActive?: true
     deletedAt?: true
@@ -3396,6 +3401,7 @@ export namespace Prisma {
     name?: true
     phone?: true
     email?: true
+    passwordHash?: true
     role?: true
     isActive?: true
     deletedAt?: true
@@ -3478,11 +3484,12 @@ export namespace Prisma {
 
   export type UserGroupByOutputType = {
     id: string
-    shopId: string
+    shopId: string | null
     authId: string
     name: string
     phone: string
     email: string | null
+    passwordHash: string | null
     role: string
     isActive: boolean
     deletedAt: Date | null
@@ -3514,12 +3521,13 @@ export namespace Prisma {
     name?: boolean
     phone?: boolean
     email?: boolean
+    passwordHash?: boolean
     role?: boolean
     isActive?: boolean
     deletedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    shop?: boolean | ShopDefaultArgs<ExtArgs>
+    shop?: boolean | User$shopArgs<ExtArgs>
     createdTransactions?: boolean | User$createdTransactionsArgs<ExtArgs>
     createdReminders?: boolean | User$createdRemindersArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -3532,12 +3540,13 @@ export namespace Prisma {
     name?: boolean
     phone?: boolean
     email?: boolean
+    passwordHash?: boolean
     role?: boolean
     isActive?: boolean
     deletedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    shop?: boolean | ShopDefaultArgs<ExtArgs>
+    shop?: boolean | User$shopArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -3547,12 +3556,13 @@ export namespace Prisma {
     name?: boolean
     phone?: boolean
     email?: boolean
+    passwordHash?: boolean
     role?: boolean
     isActive?: boolean
     deletedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    shop?: boolean | ShopDefaultArgs<ExtArgs>
+    shop?: boolean | User$shopArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectScalar = {
@@ -3562,6 +3572,7 @@ export namespace Prisma {
     name?: boolean
     phone?: boolean
     email?: boolean
+    passwordHash?: boolean
     role?: boolean
     isActive?: boolean
     deletedAt?: boolean
@@ -3569,34 +3580,35 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "shopId" | "authId" | "name" | "phone" | "email" | "role" | "isActive" | "deletedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "shopId" | "authId" | "name" | "phone" | "email" | "passwordHash" | "role" | "isActive" | "deletedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    shop?: boolean | ShopDefaultArgs<ExtArgs>
+    shop?: boolean | User$shopArgs<ExtArgs>
     createdTransactions?: boolean | User$createdTransactionsArgs<ExtArgs>
     createdReminders?: boolean | User$createdRemindersArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    shop?: boolean | ShopDefaultArgs<ExtArgs>
+    shop?: boolean | User$shopArgs<ExtArgs>
   }
   export type UserIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    shop?: boolean | ShopDefaultArgs<ExtArgs>
+    shop?: boolean | User$shopArgs<ExtArgs>
   }
 
   export type $UserPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "User"
     objects: {
-      shop: Prisma.$ShopPayload<ExtArgs>
+      shop: Prisma.$ShopPayload<ExtArgs> | null
       createdTransactions: Prisma.$TransactionPayload<ExtArgs>[]
       createdReminders: Prisma.$ReminderPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
-      shopId: string
+      shopId: string | null
       authId: string
       name: string
       phone: string
       email: string | null
+      passwordHash: string | null
       role: string
       isActive: boolean
       deletedAt: Date | null
@@ -3996,7 +4008,7 @@ export namespace Prisma {
    */
   export interface Prisma__UserClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    shop<T extends ShopDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ShopDefaultArgs<ExtArgs>>): Prisma__ShopClient<$Result.GetResult<Prisma.$ShopPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    shop<T extends User$shopArgs<ExtArgs> = {}>(args?: Subset<T, User$shopArgs<ExtArgs>>): Prisma__ShopClient<$Result.GetResult<Prisma.$ShopPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     createdTransactions<T extends User$createdTransactionsArgs<ExtArgs> = {}>(args?: Subset<T, User$createdTransactionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     createdReminders<T extends User$createdRemindersArgs<ExtArgs> = {}>(args?: Subset<T, User$createdRemindersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReminderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
@@ -4034,6 +4046,7 @@ export namespace Prisma {
     readonly name: FieldRef<"User", 'String'>
     readonly phone: FieldRef<"User", 'String'>
     readonly email: FieldRef<"User", 'String'>
+    readonly passwordHash: FieldRef<"User", 'String'>
     readonly role: FieldRef<"User", 'String'>
     readonly isActive: FieldRef<"User", 'Boolean'>
     readonly deletedAt: FieldRef<"User", 'DateTime'>
@@ -4437,6 +4450,25 @@ export namespace Prisma {
      * Limit how many Users to delete.
      */
     limit?: number
+  }
+
+  /**
+   * User.shop
+   */
+  export type User$shopArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Shop
+     */
+    select?: ShopSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Shop
+     */
+    omit?: ShopOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ShopInclude<ExtArgs> | null
+    where?: ShopWhereInput
   }
 
   /**
@@ -13880,6 +13912,7 @@ export namespace Prisma {
     name: 'name',
     phone: 'phone',
     email: 'email',
+    passwordHash: 'passwordHash',
     role: 'role',
     isActive: 'isActive',
     deletedAt: 'deletedAt',
@@ -14334,28 +14367,30 @@ export namespace Prisma {
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
     id?: UuidFilter<"User"> | string
-    shopId?: UuidFilter<"User"> | string
+    shopId?: UuidNullableFilter<"User"> | string | null
     authId?: UuidFilter<"User"> | string
     name?: StringFilter<"User"> | string
     phone?: StringFilter<"User"> | string
     email?: StringNullableFilter<"User"> | string | null
+    passwordHash?: StringNullableFilter<"User"> | string | null
     role?: StringFilter<"User"> | string
     isActive?: BoolFilter<"User"> | boolean
     deletedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
-    shop?: XOR<ShopScalarRelationFilter, ShopWhereInput>
+    shop?: XOR<ShopNullableScalarRelationFilter, ShopWhereInput> | null
     createdTransactions?: TransactionListRelationFilter
     createdReminders?: ReminderListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
     id?: SortOrder
-    shopId?: SortOrder
+    shopId?: SortOrderInput | SortOrder
     authId?: SortOrder
     name?: SortOrder
     phone?: SortOrder
     email?: SortOrderInput | SortOrder
+    passwordHash?: SortOrderInput | SortOrder
     role?: SortOrder
     isActive?: SortOrder
     deletedAt?: SortOrderInput | SortOrder
@@ -14369,31 +14404,32 @@ export namespace Prisma {
   export type UserWhereUniqueInput = Prisma.AtLeast<{
     id?: string
     authId?: string
-    shopId_phone?: UserShopIdPhoneCompoundUniqueInput
+    phone?: string
+    email?: string
     AND?: UserWhereInput | UserWhereInput[]
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
-    shopId?: UuidFilter<"User"> | string
+    shopId?: UuidNullableFilter<"User"> | string | null
     name?: StringFilter<"User"> | string
-    phone?: StringFilter<"User"> | string
-    email?: StringNullableFilter<"User"> | string | null
+    passwordHash?: StringNullableFilter<"User"> | string | null
     role?: StringFilter<"User"> | string
     isActive?: BoolFilter<"User"> | boolean
     deletedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
-    shop?: XOR<ShopScalarRelationFilter, ShopWhereInput>
+    shop?: XOR<ShopNullableScalarRelationFilter, ShopWhereInput> | null
     createdTransactions?: TransactionListRelationFilter
     createdReminders?: ReminderListRelationFilter
-  }, "id" | "authId" | "shopId_phone">
+  }, "id" | "authId" | "phone" | "email">
 
   export type UserOrderByWithAggregationInput = {
     id?: SortOrder
-    shopId?: SortOrder
+    shopId?: SortOrderInput | SortOrder
     authId?: SortOrder
     name?: SortOrder
     phone?: SortOrder
     email?: SortOrderInput | SortOrder
+    passwordHash?: SortOrderInput | SortOrder
     role?: SortOrder
     isActive?: SortOrder
     deletedAt?: SortOrderInput | SortOrder
@@ -14409,11 +14445,12 @@ export namespace Prisma {
     OR?: UserScalarWhereWithAggregatesInput[]
     NOT?: UserScalarWhereWithAggregatesInput | UserScalarWhereWithAggregatesInput[]
     id?: UuidWithAggregatesFilter<"User"> | string
-    shopId?: UuidWithAggregatesFilter<"User"> | string
+    shopId?: UuidNullableWithAggregatesFilter<"User"> | string | null
     authId?: UuidWithAggregatesFilter<"User"> | string
     name?: StringWithAggregatesFilter<"User"> | string
     phone?: StringWithAggregatesFilter<"User"> | string
     email?: StringNullableWithAggregatesFilter<"User"> | string | null
+    passwordHash?: StringNullableWithAggregatesFilter<"User"> | string | null
     role?: StringWithAggregatesFilter<"User"> | string
     isActive?: BoolWithAggregatesFilter<"User"> | boolean
     deletedAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
@@ -15253,23 +15290,25 @@ export namespace Prisma {
     name: string
     phone: string
     email?: string | null
+    passwordHash?: string | null
     role?: string
     isActive?: boolean
     deletedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    shop: ShopCreateNestedOneWithoutUsersInput
+    shop?: ShopCreateNestedOneWithoutUsersInput
     createdTransactions?: TransactionCreateNestedManyWithoutCreatorInput
     createdReminders?: ReminderCreateNestedManyWithoutCreatorInput
   }
 
   export type UserUncheckedCreateInput = {
     id?: string
-    shopId: string
+    shopId?: string | null
     authId: string
     name: string
     phone: string
     email?: string | null
+    passwordHash?: string | null
     role?: string
     isActive?: boolean
     deletedAt?: Date | string | null
@@ -15285,23 +15324,25 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    shop?: ShopUpdateOneRequiredWithoutUsersNestedInput
+    shop?: ShopUpdateOneWithoutUsersNestedInput
     createdTransactions?: TransactionUpdateManyWithoutCreatorNestedInput
     createdReminders?: ReminderUpdateManyWithoutCreatorNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    shopId?: StringFieldUpdateOperationsInput | string
+    shopId?: NullableStringFieldUpdateOperationsInput | string | null
     authId?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -15313,11 +15354,12 @@ export namespace Prisma {
 
   export type UserCreateManyInput = {
     id?: string
-    shopId: string
+    shopId?: string | null
     authId: string
     name: string
     phone: string
     email?: string | null
+    passwordHash?: string | null
     role?: string
     isActive?: boolean
     deletedAt?: Date | string | null
@@ -15331,6 +15373,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -15340,11 +15383,12 @@ export namespace Prisma {
 
   export type UserUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
-    shopId?: StringFieldUpdateOperationsInput | string
+    shopId?: NullableStringFieldUpdateOperationsInput | string | null
     authId?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -16361,14 +16405,21 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
-  export type ShopScalarRelationFilter = {
-    is?: ShopWhereInput
-    isNot?: ShopWhereInput
+  export type UuidNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedUuidNullableFilter<$PrismaModel> | string | null
   }
 
-  export type UserShopIdPhoneCompoundUniqueInput = {
-    shopId: string
-    phone: string
+  export type ShopNullableScalarRelationFilter = {
+    is?: ShopWhereInput | null
+    isNot?: ShopWhereInput | null
   }
 
   export type UserCountOrderByAggregateInput = {
@@ -16378,6 +16429,7 @@ export namespace Prisma {
     name?: SortOrder
     phone?: SortOrder
     email?: SortOrder
+    passwordHash?: SortOrder
     role?: SortOrder
     isActive?: SortOrder
     deletedAt?: SortOrder
@@ -16392,6 +16444,7 @@ export namespace Prisma {
     name?: SortOrder
     phone?: SortOrder
     email?: SortOrder
+    passwordHash?: SortOrder
     role?: SortOrder
     isActive?: SortOrder
     deletedAt?: SortOrder
@@ -16406,11 +16459,27 @@ export namespace Prisma {
     name?: SortOrder
     phone?: SortOrder
     email?: SortOrder
+    passwordHash?: SortOrder
     role?: SortOrder
     isActive?: SortOrder
     deletedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type UuidNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedUuidNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
   export type DecimalFilter<$PrismaModel = never> = {
@@ -16422,6 +16491,11 @@ export namespace Prisma {
     gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  }
+
+  export type ShopScalarRelationFilter = {
+    is?: ShopWhereInput
+    isNot?: ShopWhereInput
   }
 
   export type CustomerTagListRelationFilter = {
@@ -16539,18 +16613,6 @@ export namespace Prisma {
     not?: NestedEnumPaymentMethodNullableFilter<$PrismaModel> | $Enums.PaymentMethod | null
   }
 
-  export type UuidNullableFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    mode?: QueryMode
-    not?: NestedUuidNullableFilter<$PrismaModel> | string | null
-  }
-
   export type CustomerScalarRelationFilter = {
     is?: CustomerWhereInput
     isNot?: CustomerWhereInput
@@ -16647,21 +16709,6 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedEnumPaymentMethodNullableFilter<$PrismaModel>
     _max?: NestedEnumPaymentMethodNullableFilter<$PrismaModel>
-  }
-
-  export type UuidNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    mode?: QueryMode
-    not?: NestedUuidNullableWithAggregatesFilter<$PrismaModel> | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedStringNullableFilter<$PrismaModel>
-    _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
   export type EnumSubscriptionPlanFilter<$PrismaModel = never> = {
@@ -17270,10 +17317,12 @@ export namespace Prisma {
     connect?: ReminderWhereUniqueInput | ReminderWhereUniqueInput[]
   }
 
-  export type ShopUpdateOneRequiredWithoutUsersNestedInput = {
+  export type ShopUpdateOneWithoutUsersNestedInput = {
     create?: XOR<ShopCreateWithoutUsersInput, ShopUncheckedCreateWithoutUsersInput>
     connectOrCreate?: ShopCreateOrConnectWithoutUsersInput
     upsert?: ShopUpsertWithoutUsersInput
+    disconnect?: ShopWhereInput | boolean
+    delete?: ShopWhereInput | boolean
     connect?: ShopWhereUniqueInput
     update?: XOR<XOR<ShopUpdateToOneWithWhereWithoutUsersInput, ShopUpdateWithoutUsersInput>, ShopUncheckedUpdateWithoutUsersInput>
   }
@@ -17914,6 +17963,31 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type NestedUuidNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedUuidNullableFilter<$PrismaModel> | string | null
+  }
+
+  export type NestedUuidNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedUuidNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
+  }
+
   export type NestedDecimalFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
@@ -17955,17 +18029,6 @@ export namespace Prisma {
     not?: NestedEnumPaymentMethodNullableFilter<$PrismaModel> | $Enums.PaymentMethod | null
   }
 
-  export type NestedUuidNullableFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    not?: NestedUuidNullableFilter<$PrismaModel> | string | null
-  }
-
   export type NestedEnumTransactionTypeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.TransactionType | EnumTransactionTypeFieldRefInput<$PrismaModel>
     in?: $Enums.TransactionType[] | ListEnumTransactionTypeFieldRefInput<$PrismaModel>
@@ -17984,20 +18047,6 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedEnumPaymentMethodNullableFilter<$PrismaModel>
     _max?: NestedEnumPaymentMethodNullableFilter<$PrismaModel>
-  }
-
-  export type NestedUuidNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    not?: NestedUuidNullableWithAggregatesFilter<$PrismaModel> | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedStringNullableFilter<$PrismaModel>
-    _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
   export type NestedEnumSubscriptionPlanFilter<$PrismaModel = never> = {
@@ -18101,6 +18150,7 @@ export namespace Prisma {
     name: string
     phone: string
     email?: string | null
+    passwordHash?: string | null
     role?: string
     isActive?: boolean
     deletedAt?: Date | string | null
@@ -18116,6 +18166,7 @@ export namespace Prisma {
     name: string
     phone: string
     email?: string | null
+    passwordHash?: string | null
     role?: string
     isActive?: boolean
     deletedAt?: Date | string | null
@@ -18338,11 +18389,12 @@ export namespace Prisma {
     OR?: UserScalarWhereInput[]
     NOT?: UserScalarWhereInput | UserScalarWhereInput[]
     id?: UuidFilter<"User"> | string
-    shopId?: UuidFilter<"User"> | string
+    shopId?: UuidNullableFilter<"User"> | string | null
     authId?: UuidFilter<"User"> | string
     name?: StringFilter<"User"> | string
     phone?: StringFilter<"User"> | string
     email?: StringNullableFilter<"User"> | string | null
+    passwordHash?: StringNullableFilter<"User"> | string | null
     role?: StringFilter<"User"> | string
     isActive?: BoolFilter<"User"> | boolean
     deletedAt?: DateTimeNullableFilter<"User"> | Date | string | null
@@ -19089,22 +19141,24 @@ export namespace Prisma {
     name: string
     phone: string
     email?: string | null
+    passwordHash?: string | null
     role?: string
     isActive?: boolean
     deletedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    shop: ShopCreateNestedOneWithoutUsersInput
+    shop?: ShopCreateNestedOneWithoutUsersInput
     createdReminders?: ReminderCreateNestedManyWithoutCreatorInput
   }
 
   export type UserUncheckedCreateWithoutCreatedTransactionsInput = {
     id?: string
-    shopId: string
+    shopId?: string | null
     authId: string
     name: string
     phone: string
     email?: string | null
+    passwordHash?: string | null
     role?: string
     isActive?: boolean
     deletedAt?: Date | string | null
@@ -19273,22 +19327,24 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    shop?: ShopUpdateOneRequiredWithoutUsersNestedInput
+    shop?: ShopUpdateOneWithoutUsersNestedInput
     createdReminders?: ReminderUpdateManyWithoutCreatorNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreatedTransactionsInput = {
     id?: StringFieldUpdateOperationsInput | string
-    shopId?: StringFieldUpdateOperationsInput | string
+    shopId?: NullableStringFieldUpdateOperationsInput | string | null
     authId?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -19534,22 +19590,24 @@ export namespace Prisma {
     name: string
     phone: string
     email?: string | null
+    passwordHash?: string | null
     role?: string
     isActive?: boolean
     deletedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    shop: ShopCreateNestedOneWithoutUsersInput
+    shop?: ShopCreateNestedOneWithoutUsersInput
     createdTransactions?: TransactionCreateNestedManyWithoutCreatorInput
   }
 
   export type UserUncheckedCreateWithoutCreatedRemindersInput = {
     id?: string
-    shopId: string
+    shopId?: string | null
     authId: string
     name: string
     phone: string
     email?: string | null
+    passwordHash?: string | null
     role?: string
     isActive?: boolean
     deletedAt?: Date | string | null
@@ -19690,22 +19748,24 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    shop?: ShopUpdateOneRequiredWithoutUsersNestedInput
+    shop?: ShopUpdateOneWithoutUsersNestedInput
     createdTransactions?: TransactionUpdateManyWithoutCreatorNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreatedRemindersInput = {
     id?: StringFieldUpdateOperationsInput | string
-    shopId?: StringFieldUpdateOperationsInput | string
+    shopId?: NullableStringFieldUpdateOperationsInput | string | null
     authId?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -19990,6 +20050,7 @@ export namespace Prisma {
     name: string
     phone: string
     email?: string | null
+    passwordHash?: string | null
     role?: string
     isActive?: boolean
     deletedAt?: Date | string | null
@@ -20070,6 +20131,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -20085,6 +20147,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -20100,6 +20163,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null

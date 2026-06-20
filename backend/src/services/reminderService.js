@@ -27,7 +27,7 @@ const sendSingleReminder = async (shopId, customerId, userId) => {
     throw ApiError.badRequest("Customer has no outstanding balance to remind about");
   }
 
-  const portalUrl = `${process.env.PORTAL_BASE_URL || "http://localhost:3000"}/customer/${customer.qrToken || customer.id}`;
+  const portalUrl = `${process.env.PORTAL_BASE_URL || "https://udhari-tracking.vercel.app"}/customer/${customer.qrToken || customer.id}`;
   const message = `Hello ${customer.name}, this is a friendly reminder from ${customer.shop.name}. Your outstanding balance is ${customer.shop.currency} ${balance.toFixed(2)}. Please clear your dues at your convenience. View statement: ${portalUrl}`;
 
   const reminder = await prisma.reminder.create({
@@ -84,7 +84,7 @@ const sendBulkReminders = async (shopId, userId) => {
   // We can update the customers in bulk or individually. Since we have their IDs, let's do it inside the loop.
   for (const customer of debtors) {
     const balance = parseFloat(customer.balance);
-    const portalUrl = `${process.env.PORTAL_BASE_URL || "http://localhost:3000"}/customer/${customer.qrToken || customer.id}`;
+    const portalUrl = `${process.env.PORTAL_BASE_URL || "https://udhari-tracking.vercel.app"}/customer/${customer.qrToken || customer.id}`;
     const message = `Hello ${customer.name}, this is a friendly reminder from ${customer.shop.name}. Your outstanding balance is ${customer.shop.currency} ${balance.toFixed(2)}. Please clear your dues at your convenience. View statement: ${portalUrl}`;
 
     const reminder = await prisma.reminder.create({

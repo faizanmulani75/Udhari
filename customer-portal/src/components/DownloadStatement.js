@@ -8,7 +8,14 @@ import React, { useState } from "react";
 export default function DownloadStatement({ token }) {
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050/api/v1";
+  let API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://udhari-ajw3.onrender.com/api/v1";
+
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    if (hostname !== "localhost" && hostname !== "127.0.0.1" && API_BASE.includes("localhost")) {
+      API_BASE = API_BASE.replace("localhost", hostname);
+    }
+  }
 
   const handleDownload = async () => {
     setIsDownloading(true);

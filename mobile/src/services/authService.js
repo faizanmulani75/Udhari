@@ -96,3 +96,36 @@ export const logout = async () => {
     "shopId",
   ]);
 };
+
+/**
+ * Request registration email verification OTP.
+ * @param {string} name
+ * @param {string} phone
+ * @param {string} email
+ * @param {string} password
+ */
+export const register = async (name, phone, email, password) => {
+  const response = await api.post("/auth/register", { name, phone, email, password });
+  return response.data;
+};
+
+/**
+ * Verify registration email OTP.
+ * @param {string} email
+ * @param {string} otp
+ */
+export const verifyRegister = async (email, otp) => {
+  const response = await api.post("/auth/register/verify", { email, otp });
+  return response.data;
+};
+
+/**
+ * Log in with email/phone and password.
+ * @param {string} identifier - Email or Phone number
+ * @param {string} password
+ */
+export const login = async (identifier, password) => {
+  const response = await api.post("/auth/login", { identifier, password });
+  return response.data;
+};
+

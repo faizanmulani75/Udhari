@@ -60,7 +60,7 @@ const runAutomatedRemindersCheck = async () => {
       if (isDue) {
         // 4. Generate the template message
         const amountStr = parseFloat(customer.balance).toFixed(2);
-        const portalUrl = `http://localhost:3000/customer/${customer.qrToken}`; // portal link
+        const portalUrl = `${process.env.PORTAL_BASE_URL || "https://udhari-tracking.vercel.app"}/customer/${customer.qrToken}`; // portal link
         const message = `Hello ${customer.name}, this is an automated friendly reminder from ${customer.shop.name}. Your outstanding balance is INR ${amountStr}. Please clear your balance soon. View statement ledger here: ${portalUrl}`;
 
         // 5. Create and log the simulated sent reminder

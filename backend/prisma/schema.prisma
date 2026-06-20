@@ -96,24 +96,24 @@ model Shop {
 // Shopkeepers / staff who operate a shop.
 
 model User {
-  id        String    @id @default(uuid()) @db.Uuid
-  shopId    String    @map("shop_id") @db.Uuid
-  authId    String    @unique @map("auth_id") @db.Uuid
-  name      String    @db.VarChar(255)
-  phone     String    @db.VarChar(20)
-  email     String?   @db.VarChar(255)
-  role      String    @default("owner") @db.VarChar(50)
-  isActive  Boolean   @default(true) @map("is_active")
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  id           String    @id @default(uuid()) @db.Uuid
+  shopId       String?   @map("shop_id") @db.Uuid
+  authId       String    @unique @map("auth_id") @db.Uuid
+  name         String    @db.VarChar(255)
+  phone        String    @unique @db.VarChar(20)
+  email        String?   @unique @db.VarChar(255)
+  passwordHash String?   @map("password_hash") @db.VarChar(255)
+  role         String    @default("owner") @db.VarChar(50)
+  isActive     Boolean   @default(true) @map("is_active")
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
-  shop                Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shop                Shop?         @relation(fields: [shopId], references: [id], onDelete: Cascade)
   createdTransactions Transaction[] @relation("TransactionCreator")
   createdReminders    Reminder[]    @relation("ReminderCreator")
 
-  @@unique([shopId, phone])
   @@index([shopId])
   @@index([authId])
   @@map("users")
