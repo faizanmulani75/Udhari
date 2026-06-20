@@ -379,9 +379,9 @@ const SubscriptionScreen = ({ navigation }) => {
               variant="success"
               style={styles.checkoutConfirmBtn}
             />
-            <Text style={styles.checkoutSafetyText}>
+            {/* <Text style={styles.checkoutSafetyText}>
               🔒 Secure SSL sandboxed mockup environment. No real funds will be charged.
-            </Text>
+            </Text> */}
           </View>
         </View>
       </Modal>

@@ -1,13 +1,19 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "Udhari Tracker",
+    "slug": "udhari-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#121217"
+    },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.udharitracker",
       "infoPlist": {
         "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to use speech recognition.",
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use the microphone."
@@ -15,7 +21,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#121217",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -23,7 +29,7 @@
       "permissions": [
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.anonymous.mobile"
+      "package": "com.udharitracker"
     },
     "web": {
       "favicon": "./assets/favicon.png"

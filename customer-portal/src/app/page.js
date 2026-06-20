@@ -12,8 +12,8 @@ export default function HomePage() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-xl mx-auto z-10">
-        <div className="w-20 h-20 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-4xl shadow-lg mb-8 animate-bounce">
-          ₹
+        <div className="w-20 h-20 mb-8 animate-bounce">
+          <img src="/logo.png" alt="Udhari Logo" className="w-full h-full object-contain" />
         </div>
         
         <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-4">

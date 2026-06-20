@@ -15,8 +15,8 @@ export default function ShopHeader({ shop }) {
   return (
     <div className="bg-[#1A1A1E]/80 backdrop-blur-md border border-white/5 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl transition-all duration-300 hover:border-white/10">
       <div className="flex items-center gap-4 text-center md:text-left flex-col md:flex-row">
-        <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-3xl shadow-inner">
-          🏪
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden">
+          <img src="/logo.png" alt="Udhari Logo" className="w-full h-full object-contain" />
         </div>
         <div>
           <h1 className="text-2xl font-extrabold text-white tracking-tight leading-none mb-2">
