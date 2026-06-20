@@ -13,9 +13,11 @@ import {
   Keyboard,
   StatusBar,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useCustomerStore from "../../store/customerStore";
+import useShopStore from "../../store/shopStore";
 import Colors from "../../constants/colors";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
@@ -27,12 +29,15 @@ const AddCustomerScreen = ({ route, navigation }) => {
 
   const {
     customers,
+    meta,
     createCustomer,
     updateCustomer,
     isActionLoading,
     error: storeError,
     clearError,
   } = useCustomerStore();
+
+  const { shop } = useShopStore();
 
   // ── Form State ─────────────────────────────────────────
   const [name, setName] = useState("");
@@ -99,6 +104,28 @@ const AddCustomerScreen = ({ route, navigation }) => {
   const handleSave = async () => {
     Keyboard.dismiss();
     if (!validate()) return;
+
+    if (!isEditMode) {
+      const subscription = shop?.subscriptions?.[0];
+      const maxCustomers = subscription ? subscription.maxCustomers : 10;
+      const currentCount = meta?.totalCount || customers.length;
+      const planName = subscription ? subscription.plan : "FREE";
+
+      if (currentCount >= maxCustomers) {
+        Alert.alert(
+          "Customer Limit Reached",
+          `Your current ${planName} Plan only supports up to ${maxCustomers} active customers. Please upgrade your plan to register more grahaks.`,
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Upgrade Plan",
+              onPress: () => navigation.navigate("Settings", { screen: "Subscription" }),
+            },
+          ]
+        );
+        return;
+      }
+    }
 
     const customerData = {
       name: name.trim(),

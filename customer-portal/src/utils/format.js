@@ -2,21 +2,14 @@
 // Formatting helpers for the web customer portal.
 
 /**
- * Format numeric amount to Indian Rupee (INR) or USD currency format.
+ * Format numeric amount to Indian Rupee (INR) currency format.
  *
  * @param {number|string} amount
- * @param {string} currencyCode - 'INR' or 'USD'
+ * @param {string} currencyCode - 'INR'
  * @returns {string} Formatted string
  */
 export const formatCurrency = (amount, currencyCode = "INR") => {
   const numericVal = parseFloat(amount || 0);
-
-  if (currencyCode === "USD") {
-    return `$${numericVal.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  }
 
   // Indian format: ₹XX,XX,XXX.XX
   return `₹${numericVal.toLocaleString("en-IN", {

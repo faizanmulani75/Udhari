@@ -290,46 +290,7 @@ const ShopSetupScreen = () => {
                 />
               </View>
 
-              {/* Currency Selector */}
-              <View style={styles.inputWrapper}>
-                <Text style={styles.label}>Business Currency</Text>
-                <View style={styles.currencyRow}>
-                  <TouchableOpacity
-                    style={[
-                      styles.currencyBtn,
-                      currency === "INR" && styles.currencyBtnActive,
-                    ]}
-                    onPress={() => setCurrency("INR")}
-                    activeOpacity={0.8}
-                  >
-                    <Text
-                      style={[
-                        styles.currencyText,
-                        currency === "INR" && styles.currencyTextActive,
-                      ]}
-                    >
-                      INR (₹)
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.currencyBtn,
-                      currency === "USD" && styles.currencyBtnActive,
-                    ]}
-                    onPress={() => setCurrency("USD")}
-                    activeOpacity={0.8}
-                  >
-                    <Text
-                      style={[
-                        styles.currencyText,
-                        currency === "USD" && styles.currencyTextActive,
-                      ]}
-                    >
-                      USD ($)
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+
 
               {/* Action Buttons */}
               <TouchableOpacity

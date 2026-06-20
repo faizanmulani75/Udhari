@@ -1257,15 +1257,17 @@ const styles = StyleSheet.create({
   infoTagsRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 4,
+    justifyContent: "flex-end",
+    flex: 1,
+    marginLeft: 16,
   },
   infoTagsList: {
     flexDirection: "row",
     flexWrap: "wrap",
+    justifyContent: "flex-end",
     gap: 6,
     flex: 1,
-    marginRight: 12,
+    marginRight: 10,
   },
   manageTagsBtn: {
     flexDirection: "row",
@@ -1296,6 +1298,7 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontSize: 13,
     fontStyle: "italic",
+    textAlign: "right",
   },
 });
 

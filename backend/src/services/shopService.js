@@ -96,7 +96,7 @@ const createShop = async (authId, userPhone, data) => {
         shopId: shop.id,
         plan: "FREE",
         status: "ACTIVE",
-        maxCustomers: 50,
+        maxCustomers: 10,
         maxUsers: 1,
         amount: 0.0,
         currency,

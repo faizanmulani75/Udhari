@@ -21,7 +21,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import useTransactionStore from "../../store/transactionStore";
 import useCustomerStore from "../../store/customerStore";
-import useAuthStore from "../../store/authStore";
+import useShopStore from "../../store/shopStore";
 import Colors from "../../constants/colors";
 import { formatCurrency } from "../../utils/format";
 import Input from "../../components/common/Input";
@@ -121,7 +121,7 @@ const AddTransactionScreen = ({ route, navigation }) => {
     clearError,
   } = useTransactionStore();
 
-  const { shop } = useAuthStore();
+  const { shop } = useShopStore();
   const currencyCode = shop?.currency || "INR";
 
   const customer = customers.find((c) => c.id === customerId);
@@ -137,6 +137,22 @@ const AddTransactionScreen = ({ route, navigation }) => {
   const [isAiLoading, setIsAiLoading] = useState(false);
 
   const handleAiParse = async () => {
+    const plan = shop?.subscriptions?.[0]?.plan || "FREE";
+    if (plan !== "PRO") {
+      Alert.alert(
+        "Pro Feature Required",
+        "AI Transaction Parsing is a Pro-only feature. Please upgrade your plan to unlock AI features.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Upgrade Plan",
+            onPress: () => navigation.navigate("Settings", { screen: "Subscription" }),
+          },
+        ]
+      );
+      return;
+    }
+
     const textToParse = description.trim();
     if (!textToParse) {
       Alert.alert("AI Entry Helper", "Please voice enter or type some details first (e.g. '5kg chawal 400'), then tap AI to extract fields.");
@@ -191,6 +207,22 @@ const AddTransactionScreen = ({ route, navigation }) => {
   });
 
   const toggleListening = async () => {
+    const plan = shop?.subscriptions?.[0]?.plan || "FREE";
+    if (plan === "FREE") {
+      Alert.alert(
+        "Premium Feature Required",
+        "Voice entries are only supported in our BASIC and PRO plans. Please upgrade your plan to unlock voice entry.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Upgrade Plan",
+            onPress: () => navigation.navigate("Settings", { screen: "Subscription" }),
+          },
+        ]
+      );
+      return;
+    }
+
     if (!ExpoSpeechRecognitionModule) {
       Alert.alert(
         "Voice Input Status",
@@ -246,7 +278,7 @@ const AddTransactionScreen = ({ route, navigation }) => {
   }
 
   // ── Presets for rapid entry ──
-  const presets = currencyCode === "USD" ? [5, 10, 20, 50, 100] : [100, 200, 500, 1000, 2000];
+  const presets = [100, 200, 500, 1000, 2000];
 
   const handlePresetPress = (val) => {
     const trimmed = amount.trim();
@@ -409,7 +441,7 @@ const AddTransactionScreen = ({ route, navigation }) => {
                   { color: themeColor },
                   errors.amount && styles.amountInputError,
                 ]}
-                placeholder={`${currencyCode === "USD" ? "$" : "₹"}0.00`}
+                placeholder="₹0.00"
                 placeholderTextColor={Colors.textPlaceholder}
                 value={amount}
                 onChangeText={(text) => {

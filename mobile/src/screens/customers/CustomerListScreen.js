@@ -13,10 +13,11 @@ import {
   RefreshControl,
   StatusBar,
   ScrollView,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useCustomerStore from "../../store/customerStore";
-import useAuthStore from "../../store/authStore";
+import useShopStore from "../../store/shopStore";
 import Colors from "../../constants/colors";
 import { formatCurrency } from "../../utils/format";
 import EmptyState from "../../components/common/EmptyState";
@@ -32,7 +33,7 @@ const CustomerListScreen = ({ navigation }) => {
     clearSelectedCustomer,
   } = useCustomerStore();
 
-  const { shop } = useAuthStore();
+  const { shop, fetchShop } = useShopStore();
   const currencyCode = shop?.currency || "INR";
 
   // ── Local State ─────────────────────────────────────────
@@ -45,6 +46,7 @@ const CustomerListScreen = ({ navigation }) => {
   useEffect(() => {
     fetchCustomers({ page: 1, search: "", tagId: "" });
     loadTags();
+    fetchShop();
   }, []);
 
   const loadTags = async () => {
@@ -74,6 +76,7 @@ const CustomerListScreen = ({ navigation }) => {
     await Promise.all([
       fetchCustomers({ page: 1, search: searchQuery, tagId: selectedTagId || "" }),
       loadTags(),
+      fetchShop(),
     ]);
     setIsRefreshing(false);
   }, [searchQuery, selectedTagId]);
@@ -90,6 +93,29 @@ const CustomerListScreen = ({ navigation }) => {
         true
       );
     }
+  };
+
+  const handleAddNewCustomer = () => {
+    const subscription = shop?.subscriptions?.[0];
+    const maxCustomers = subscription ? subscription.maxCustomers : 10;
+    const currentCount = meta?.totalCount || customers.length;
+    const planName = subscription ? subscription.plan : "FREE";
+
+    if (currentCount >= maxCustomers) {
+      Alert.alert(
+        "Customer Limit Reached",
+        `Your current ${planName} Plan only supports up to ${maxCustomers} active customers. Please upgrade your plan to register more grahaks.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Upgrade Plan",
+            onPress: () => navigation.navigate("Settings", { screen: "Subscription" }),
+          },
+        ]
+      );
+      return;
+    }
+    navigation.navigate("AddCustomerScreen");
   };
 
   // Calculate total outstanding balance for header summary
@@ -295,7 +321,7 @@ const CustomerListScreen = ({ navigation }) => {
               title="Empty Khata Book"
               subtitle="Register your first Grahak to start writing Khata entries."
               actionTitle="+ Add Grahak"
-              onActionPress={() => navigation.navigate("AddCustomerScreen")}
+              onActionPress={handleAddNewCustomer}
             />
           ) : null
         }
@@ -305,7 +331,7 @@ const CustomerListScreen = ({ navigation }) => {
       <TouchableOpacity
         style={styles.fab}
         activeOpacity={0.8}
-        onPress={() => navigation.navigate("AddCustomerScreen")}
+        onPress={handleAddNewCustomer}
       >
         <Feather name="plus" size={24} color={Colors.white} />
       </TouchableOpacity>

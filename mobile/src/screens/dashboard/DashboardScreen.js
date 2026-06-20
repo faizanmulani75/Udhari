@@ -18,6 +18,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import useDashboardStore from "../../store/dashboardStore";
 import useAuthStore from "../../store/authStore";
+import useShopStore from "../../store/shopStore";
 import Colors from "../../constants/colors";
 import { formatCurrency, formatDate } from "../../utils/format";
 import { getOfflineTransactions, syncQueuedTransactions } from "../../utils/syncManager";
@@ -25,7 +26,8 @@ import { sendBulkReminders } from "../../services/reminderService";
 import { LinearGradient } from "expo-linear-gradient";
 
 const DashboardScreen = ({ navigation }) => {
-  const { shop, user } = useAuthStore();
+  const { user } = useAuthStore();
+  const { shop, fetchShop } = useShopStore();
   const currencyCode = shop?.currency || "INR";
 
   const {
@@ -83,6 +85,7 @@ const DashboardScreen = ({ navigation }) => {
   useFocusEffect(
     useCallback(() => {
       fetchDashboard();
+      fetchShop();
       checkPendingSync();
     }, [])
   );
@@ -90,7 +93,7 @@ const DashboardScreen = ({ navigation }) => {
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await checkPendingSync();
-    await fetchDashboard();
+    await Promise.all([fetchDashboard(), fetchShop()]);
     setIsRefreshing(false);
   }, []);
 
