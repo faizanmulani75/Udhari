@@ -18,8 +18,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import Colors from "../../constants/colors";
 import Button from "../../components/common/Button";
-import { getSubscription, upgradeSubscription } from "../../services/subscriptionService";
+import { 
+  getSubscription, 
+  upgradeSubscription, 
+  createSubscriptionOrder, 
+  verifySubscriptionPayment 
+} from "../../services/subscriptionService";
 import useShopStore from "../../store/shopStore";
+import useAuthStore from "../../store/authStore";
+import RazorpayCheckout from "react-native-razorpay";
 
 const SubscriptionScreen = ({ navigation }) => {
   const { fetchShop } = useShopStore();
@@ -57,13 +64,91 @@ const SubscriptionScreen = ({ navigation }) => {
     fetchSubscriptionInfo();
   }, []);
 
-  const handleSelectPlan = (plan) => {
+  const handleSelectPlan = async (plan) => {
     if (plan === currentPlan) {
       Alert.alert("Already Active Plan", `You are currently subscribed to the ${plan} Plan.`);
       return;
     }
-    setSelectedPlan(plan);
-    setCheckoutVisible(true);
+
+    setIsLoading(true);
+    try {
+      // 1. Create order on backend
+      const orderRes = await createSubscriptionOrder(plan);
+      if (orderRes && orderRes.success) {
+        if (orderRes.isMock) {
+          // If in mock mode, open the local simulated checkout modal!
+          setSelectedPlan(plan);
+          setCheckoutVisible(true);
+        } else {
+          // If Razorpay is enabled, launch native Razorpay payment sheet!
+          const { user } = useAuthStore.getState();
+
+          const options = {
+            description: `Upgrade to ${plan} Plan`,
+            image: "https://udhari-tracking.vercel.app/logo.png",
+            currency: "INR",
+            key: orderRes.keyId,
+            amount: orderRes.amount,
+            name: "Udhari",
+            order_id: orderRes.orderId,
+            prefill: {
+              email: user?.email || "",
+              contact: user?.phone || "",
+              name: user?.name || ""
+            },
+            theme: { color: Colors.primary }
+          };
+
+          RazorpayCheckout.open(options)
+            .then(async (data) => {
+              // 2. Verify payment on backend
+              setIsLoading(true);
+              try {
+                const verifyRes = await verifySubscriptionPayment({
+                  razorpay_order_id: data.razorpay_order_id || orderRes.orderId,
+                  razorpay_payment_id: data.razorpay_payment_id,
+                  razorpay_signature: data.razorpay_signature,
+                  plan: plan
+                });
+
+                if (verifyRes && verifyRes.success) {
+                  Alert.alert(
+                    "Payment Successful! 🎉",
+                    `Congratulations! Your shop has been upgraded to the ${plan} Plan.`,
+                    [
+                      {
+                        text: "Done",
+                        onPress: async () => {
+                          await fetchShop();
+                          await fetchSubscriptionInfo();
+                        }
+                      }
+                    ]
+                  );
+                } else {
+                  Alert.alert("Verification Failed", verifyRes.message || "Failed to verify payment signature.");
+                }
+              } catch (verifyErr) {
+                console.warn("Payment verification error:", verifyErr);
+                Alert.alert("Verification Error", "Could not verify payment signature on server.");
+              } finally {
+                setIsLoading(false);
+              }
+            })
+            .catch((paymentErr) => {
+              console.warn("Razorpay payment sheet dismissed/failed:", paymentErr);
+              Alert.alert("Payment Cancelled", "The payment process was cancelled or failed.");
+            });
+        }
+      } else {
+        Alert.alert("Order Error", orderRes.message || "Could not initialize payment order.");
+      }
+    } catch (err) {
+      console.warn("Error starting upgrade flow:", err);
+      Alert.alert("Connection Error", "Failed to connect to billing server. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const executeUpgrade = async () => {
@@ -80,7 +165,20 @@ const SubscriptionScreen = ({ navigation }) => {
 
     setIsProcessingUpgrade(true);
     try {
-      const res = await upgradeSubscription(selectedPlan);
+      // 1. Create simulated order on backend
+      const orderRes = await createSubscriptionOrder(selectedPlan);
+      if (!orderRes || !orderRes.success) {
+        throw new Error(orderRes?.message || "Failed to create mock order");
+      }
+
+      // 2. Call verify payment with mock signature
+      const res = await verifySubscriptionPayment({
+        razorpay_order_id: orderRes.orderId,
+        razorpay_payment_id: `mock_pay_${Math.random().toString(36).substring(2, 10)}`,
+        razorpay_signature: "mock_signature",
+        plan: selectedPlan,
+      });
+
       if (res && res.success) {
         Alert.alert(
           "Payment Successful! 🎉",
