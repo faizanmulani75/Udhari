@@ -45,7 +45,15 @@
           ]
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#121217",
+          "imageWidth": 200
+        }
+      ]
     ]
   }
 }
