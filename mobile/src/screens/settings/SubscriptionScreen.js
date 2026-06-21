@@ -13,6 +13,7 @@ import {
   Modal,
   TextInput,
   StatusBar,
+  NativeModules,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -70,6 +71,49 @@ const SubscriptionScreen = ({ navigation }) => {
       return;
     }
 
+    if (plan === "FREE") {
+      Alert.alert(
+        "Confirm Downgrade",
+        "Are you sure you want to downgrade to the Free Plan? Your customer limit will be reduced to 10, and staff accounts to 1.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Downgrade",
+            style: "destructive",
+            onPress: async () => {
+              setIsLoading(true);
+              try {
+                const res = await upgradeSubscription("FREE");
+                if (res && res.success) {
+                  Alert.alert(
+                    "Downgraded Successfully",
+                    "Your subscription has been changed to the Free Plan.",
+                    [
+                      {
+                        text: "OK",
+                        onPress: async () => {
+                          await fetchShop();
+                          await fetchSubscriptionInfo();
+                        },
+                      },
+                    ]
+                  );
+                } else {
+                  Alert.alert("Downgrade Failed", res.message || "Could not downgrade plan.");
+                }
+              } catch (err) {
+                console.warn("Downgrade error:", err);
+                Alert.alert("Error", "Failed to connect to billing server.");
+              } finally {
+                setIsLoading(false);
+              }
+            },
+          },
+        ]
+      );
+      return;
+    }
+
     setIsLoading(true);
     try {
       // 1. Create order on backend
@@ -80,7 +124,29 @@ const SubscriptionScreen = ({ navigation }) => {
           setSelectedPlan(plan);
           setCheckoutVisible(true);
         } else {
-          // If Razorpay is enabled, launch native Razorpay payment sheet!
+          // If Razorpay is enabled, check if the native module is available
+          const isRazorpaySupported = !!NativeModules.RNRazorpayCheckout;
+
+          if (!isRazorpaySupported) {
+            console.warn("Razorpay native module is not available. Falling back to mock checkout.");
+            Alert.alert(
+              "Development Environment",
+              "Razorpay native module is not available in this build (e.g., running in Expo Go). Redirecting to simulated checkout.",
+              [
+                {
+                  text: "OK",
+                  onPress: () => {
+                    setSelectedPlan(plan);
+                    setCheckoutVisible(true);
+                  },
+                },
+              ]
+            );
+            setIsLoading(false);
+            return;
+          }
+
+          // If Razorpay is enabled and native module is available, launch native Razorpay payment sheet!
           const { user } = useAuthStore.getState();
 
           const options = {
