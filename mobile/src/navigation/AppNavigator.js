@@ -5,15 +5,19 @@
 import React, { useEffect } from "react";
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
+import * as SplashScreen from "expo-splash-screen";
 import useAuthStore from "../store/authStore";
 import AuthNavigator from "./AuthNavigator";
 import ShopSetupScreen from "../screens/onboarding/ShopSetupScreen";
 import MainNavigator from "./MainNavigator";
 import Colors from "../constants/colors";
 
+// Prevent native splash screen from hiding until hydration is complete
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
 // ── Splash Screen (shown while hydrating) ──
 
-const SplashScreen = () => (
+const LocalSplashScreen = () => (
   <View style={splashStyles.container}>
     <View style={splashStyles.logoCircle}>
       <Text style={splashStyles.logoText}>₹</Text>
@@ -74,9 +78,15 @@ const AppNavigator = () => {
     hydrate();
   }, []);
 
+  useEffect(() => {
+    if (isHydrated) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [isHydrated]);
+
   // Show splash while checking AsyncStorage
   if (!isHydrated) {
-    return <SplashScreen />;
+    return <LocalSplashScreen />;
   }
 
   return (

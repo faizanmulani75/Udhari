@@ -10,10 +10,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  Modal,
-  TextInput,
   StatusBar,
-  NativeModules,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -35,16 +32,6 @@ const SubscriptionScreen = ({ navigation }) => {
   const [currentPlan, setCurrentPlan] = useState("FREE");
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedPlan, setSelectedPlan] = useState("BASIC"); // default pre-selection
-  const [checkoutVisible, setCheckoutVisible] = useState(false);
-  const [isProcessingUpgrade, setIsProcessingUpgrade] = useState(false);
-
-  // Mock Payment Fields
-  const [paymentMethod, setPaymentMethod] = useState("CARD"); // 'CARD' or 'UPI'
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvv, setCvv] = useState("");
-  const [upiId, setUpiId] = useState("");
 
   const fetchSubscriptionInfo = async () => {
     setIsLoading(true);
@@ -119,93 +106,65 @@ const SubscriptionScreen = ({ navigation }) => {
       // 1. Create order on backend
       const orderRes = await createSubscriptionOrder(plan);
       if (orderRes && orderRes.success) {
-        if (orderRes.isMock) {
-          // If in mock mode, open the local simulated checkout modal!
-          setSelectedPlan(plan);
-          setCheckoutVisible(true);
-        } else {
-          // If Razorpay is enabled, check if the native module is available
-          const isRazorpaySupported = !!NativeModules.RNRazorpayCheckout;
+        // Launch native Razorpay payment sheet!
+        const { user } = useAuthStore.getState();
 
-          if (!isRazorpaySupported) {
-            console.warn("Razorpay native module is not available. Falling back to mock checkout.");
-            Alert.alert(
-              "Development Environment",
-              "Razorpay native module is not available in this build (e.g., running in Expo Go). Redirecting to simulated checkout.",
-              [
-                {
-                  text: "OK",
-                  onPress: () => {
-                    setSelectedPlan(plan);
-                    setCheckoutVisible(true);
-                  },
-                },
-              ]
-            );
-            setIsLoading(false);
-            return;
-          }
+        const options = {
+          description: `Upgrade to ${plan} Plan`,
+          image: "https://udhari-tracking.vercel.app/logo.png",
+          currency: "INR",
+          key: orderRes.keyId,
+          amount: orderRes.amount,
+          name: "Udhari",
+          order_id: orderRes.orderId,
+          prefill: {
+            email: user?.email || "",
+            contact: user?.phone || "",
+            name: user?.name || ""
+          },
+          theme: { color: Colors.primary }
+        };
 
-          // If Razorpay is enabled and native module is available, launch native Razorpay payment sheet!
-          const { user } = useAuthStore.getState();
+        RazorpayCheckout.open(options)
+          .then(async (data) => {
+            // 2. Verify payment on backend
+            setIsLoading(true);
+            try {
+              const verifyRes = await verifySubscriptionPayment({
+                razorpay_order_id: data.razorpay_order_id || orderRes.orderId,
+                razorpay_payment_id: data.razorpay_payment_id,
+                razorpay_signature: data.razorpay_signature,
+                plan: plan
+              });
 
-          const options = {
-            description: `Upgrade to ${plan} Plan`,
-            image: "https://udhari-tracking.vercel.app/logo.png",
-            currency: "INR",
-            key: orderRes.keyId,
-            amount: orderRes.amount,
-            name: "Udhari",
-            order_id: orderRes.orderId,
-            prefill: {
-              email: user?.email || "",
-              contact: user?.phone || "",
-              name: user?.name || ""
-            },
-            theme: { color: Colors.primary }
-          };
-
-          RazorpayCheckout.open(options)
-            .then(async (data) => {
-              // 2. Verify payment on backend
-              setIsLoading(true);
-              try {
-                const verifyRes = await verifySubscriptionPayment({
-                  razorpay_order_id: data.razorpay_order_id || orderRes.orderId,
-                  razorpay_payment_id: data.razorpay_payment_id,
-                  razorpay_signature: data.razorpay_signature,
-                  plan: plan
-                });
-
-                if (verifyRes && verifyRes.success) {
-                  Alert.alert(
-                    "Payment Successful! 🎉",
-                    `Congratulations! Your shop has been upgraded to the ${plan} Plan.`,
-                    [
-                      {
-                        text: "Done",
-                        onPress: async () => {
-                          await fetchShop();
-                          await fetchSubscriptionInfo();
-                        }
+              if (verifyRes && verifyRes.success) {
+                Alert.alert(
+                  "Payment Successful! 🎉",
+                  `Congratulations! Your shop has been upgraded to the ${plan} Plan.`,
+                  [
+                    {
+                      text: "Done",
+                      onPress: async () => {
+                        await fetchShop();
+                        await fetchSubscriptionInfo();
                       }
-                    ]
-                  );
-                } else {
-                  Alert.alert("Verification Failed", verifyRes.message || "Failed to verify payment signature.");
-                }
-              } catch (verifyErr) {
-                console.warn("Payment verification error:", verifyErr);
-                Alert.alert("Verification Error", "Could not verify payment signature on server.");
-              } finally {
-                setIsLoading(false);
+                    }
+                  ]
+                );
+              } else {
+                Alert.alert("Verification Failed", verifyRes.message || "Failed to verify payment signature.");
               }
-            })
-            .catch((paymentErr) => {
-              console.warn("Razorpay payment sheet dismissed/failed:", paymentErr);
-              Alert.alert("Payment Cancelled", "The payment process was cancelled or failed.");
-            });
-        }
+            } catch (verifyErr) {
+              console.warn("Payment verification error:", verifyErr);
+              Alert.alert("Verification Error", "Could not verify payment signature on server.");
+            } finally {
+              setIsLoading(false);
+            }
+          })
+          .catch((paymentErr) => {
+            console.warn("Razorpay payment sheet dismissed/failed:", paymentErr);
+            Alert.alert("Payment Cancelled", "The payment process was cancelled or failed.");
+          });
       } else {
         Alert.alert("Order Error", orderRes.message || "Could not initialize payment order.");
       }
@@ -214,75 +173,6 @@ const SubscriptionScreen = ({ navigation }) => {
       Alert.alert("Connection Error", "Failed to connect to billing server. Please try again.");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const executeUpgrade = async () => {
-    if (selectedPlan !== "FREE") {
-      if (paymentMethod === "CARD" && (!cardNumber || !expiry || !cvv)) {
-        Alert.alert("Payment Info Required", "Please enter card details to simulate checkout.");
-        return;
-      }
-      if (paymentMethod === "UPI" && !upiId.trim()) {
-        Alert.alert("Payment Info Required", "Please enter your UPI ID to simulate checkout.");
-        return;
-      }
-    }
-
-    setIsProcessingUpgrade(true);
-    try {
-      // 1. Create simulated order on backend
-      const orderRes = await createSubscriptionOrder(selectedPlan);
-      if (!orderRes || !orderRes.success) {
-        throw new Error(orderRes?.message || "Failed to create mock order");
-      }
-
-      // 2. Call verify payment with mock signature
-      const res = await verifySubscriptionPayment({
-        razorpay_order_id: orderRes.orderId,
-        razorpay_payment_id: `mock_pay_${Math.random().toString(36).substring(2, 10)}`,
-        razorpay_signature: "mock_signature",
-        plan: selectedPlan,
-      });
-
-      if (res && res.success) {
-        Alert.alert(
-          "Payment Successful! 🎉",
-          `Congratulations! Your shop has been upgraded to the ${selectedPlan} Plan.`,
-          [
-            {
-              text: "Done",
-              onPress: async () => {
-                setCheckoutVisible(false);
-                setCardNumber("");
-                setExpiry("");
-                setCvv("");
-                setUpiId("");
-                // Refresh local store and refresh screen
-                await fetchShop();
-                await fetchSubscriptionInfo();
-              },
-            },
-          ]
-        );
-      } else {
-        Alert.alert("Upgrade Failed", res.message || "An error occurred during billing.");
-      }
-    } catch (err) {
-      console.warn("Upgrade transaction failed:", err);
-      Alert.alert("Billing Error", "Could not connect to payment gateway. Please try again.");
-    } finally {
-      setIsProcessingUpgrade(false);
-    }
-  };
-
-  const handleExpiryChange = (text) => {
-    // Automatically insert '/' after MM digits (max MM/YY format)
-    const clean = text.replace(/[^0-9]/g, "");
-    if (clean.length > 2) {
-      setExpiry(`${clean.slice(0, 2)}/${clean.slice(2, 4)}`);
-    } else {
-      setExpiry(clean);
     }
   };
 
@@ -443,112 +333,7 @@ const SubscriptionScreen = ({ navigation }) => {
         </ScrollView>
       )}
 
-      {/* Mock Payment Checkout Modal */}
-      <Modal visible={checkoutVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Mock Checkout</Text>
-              <TouchableOpacity onPress={() => setCheckoutVisible(false)} style={styles.closeModalBtn}>
-                <Feather name="x" size={20} color={Colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.checkoutSummary}>
-              <Text style={styles.checkoutLabel}>Upgrading to:</Text>
-              <Text style={styles.checkoutValue}>{selectedPlan} PLAN</Text>
-              <Text style={styles.checkoutAmount}>
-                Total Due: {selectedPlan === "PRO" ? "₹999.00" : "₹299.00"}/month
-              </Text>
-            </View>
-
-            {/* Payment Method Tabs */}
-            <View style={styles.methodSelector}>
-              <TouchableOpacity
-                style={[styles.methodTab, paymentMethod === "CARD" && styles.methodTabActive]}
-                onPress={() => setPaymentMethod("CARD")}
-              >
-                <Feather name="credit-card" size={16} color={paymentMethod === "CARD" ? Colors.white : Colors.textSecondary} />
-                <Text style={[styles.methodTabText, paymentMethod === "CARD" && styles.methodTabTextActive]}>Card</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.methodTab, paymentMethod === "UPI" && styles.methodTabActive]}
-                onPress={() => setPaymentMethod("UPI")}
-              >
-                <Feather name="smartphone" size={16} color={paymentMethod === "UPI" ? Colors.white : Colors.textSecondary} />
-                <Text style={[styles.methodTabText, paymentMethod === "UPI" && styles.methodTabTextActive]}>UPI</Text>
-              </TouchableOpacity>
-            </View>
-
-            {paymentMethod === "CARD" ? (
-              <View>
-                <Text style={styles.inputLabel}>Card Number</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="4111 2222 3333 4444"
-                  placeholderTextColor={Colors.textPlaceholder}
-                  keyboardType="number-pad"
-                  value={cardNumber}
-                  onChangeText={setCardNumber}
-                  maxLength={19}
-                />
-
-                <View style={styles.inputRow}>
-                  <View style={{ flex: 1, marginRight: 8 }}>
-                    <Text style={styles.inputLabel}>Expiry</Text>
-                     <TextInput
-                      style={styles.textInput}
-                      placeholder="MM/YY"
-                      placeholderTextColor={Colors.textPlaceholder}
-                      keyboardType="number-pad"
-                      value={expiry}
-                      onChangeText={handleExpiryChange}
-                      maxLength={5}
-                    />
-                  </View>
-                  <View style={{ flex: 1, marginLeft: 8 }}>
-                    <Text style={styles.inputLabel}>CVV</Text>
-                    <TextInput
-                      style={styles.textInput}
-                      placeholder="123"
-                      placeholderTextColor={Colors.textPlaceholder}
-                      keyboardType="number-pad"
-                      value={cvv}
-                      onChangeText={setCvv}
-                      maxLength={3}
-                      secureTextEntry={true}
-                    />
-                  </View>
-                </View>
-              </View>
-            ) : (
-              <View>
-                <Text style={styles.inputLabel}>UPI ID</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="shopkeeper@upi"
-                  placeholderTextColor={Colors.textPlaceholder}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  value={upiId}
-                  onChangeText={setUpiId}
-                />
-              </View>
-            )}
-
-            <Button
-              title="Pay"
-              onPress={executeUpgrade}
-              isLoading={isProcessingUpgrade}
-              variant="success"
-              style={styles.checkoutConfirmBtn}
-            />
-            {/* <Text style={styles.checkoutSafetyText}>
-              🔒 Secure SSL sandboxed mockup environment. No real funds will be charged.
-            </Text> */}
-          </View>
-        </View>
-      </Modal>
+      {/* Checkout flows are handled natively via Razorpay payment sheets */}
     </SafeAreaView>
   );
 };
@@ -742,128 +527,6 @@ const styles = StyleSheet.create({
   choosePlanBtn: {
     marginTop: 14,
     paddingVertical: 12,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    justifyContent: "flex-end",
-  },
-  modalCard: {
-    backgroundColor: Colors.bgCard,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: 24,
-    paddingBottom: 40,
-    borderTopWidth: 1.5,
-    borderColor: Colors.borderLight,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: Colors.white,
-  },
-  closeModalBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.bgElevated,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkoutSummary: {
-    backgroundColor: Colors.bgInput,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginBottom: 20,
-  },
-  checkoutLabel: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    marginBottom: 4,
-  },
-  checkoutValue: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: Colors.white,
-    marginBottom: 8,
-  },
-  checkoutAmount: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.primaryLight,
-  },
-  inputLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: Colors.textSecondary,
-    marginBottom: 6,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  textInput: {
-    backgroundColor: Colors.bgInput,
-    borderRadius: 14,
-    color: Colors.white,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    fontSize: 15,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginBottom: 16,
-  },
-  inputRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  checkoutConfirmBtn: {
-    marginTop: 10,
-    paddingVertical: 14,
-  },
-  checkoutSafetyText: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    textAlign: "center",
-    marginTop: 12,
-  },
-  methodSelector: {
-    flexDirection: "row",
-    backgroundColor: Colors.bgInput,
-    borderRadius: 14,
-    padding: 4,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  methodTab: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 8,
-  },
-  methodTabActive: {
-    backgroundColor: Colors.primary,
-  },
-  methodTabText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.textSecondary,
-  },
-  methodTabTextActive: {
-    color: Colors.white,
   },
 });
 
