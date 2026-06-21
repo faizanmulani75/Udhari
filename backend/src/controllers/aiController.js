@@ -301,9 +301,15 @@ Input text: "${text}"`
     });
 
     if (matchingCustomers.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: `Customer "${searchName}" not found`
+      return res.json({
+        success: true,
+        action: "CUSTOMER_NOT_FOUND",
+        data: {
+          customerName: searchName,
+          amount: parsedData.amount,
+          description: parsedData.description,
+          type: parsedData.type
+        }
       });
     }
 

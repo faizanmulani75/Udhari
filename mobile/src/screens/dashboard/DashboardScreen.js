@@ -27,6 +27,7 @@ import { getOfflineTransactions, syncQueuedTransactions } from "../../utils/sync
 import { sendBulkReminders } from "../../services/reminderService";
 import { voiceEntry } from "../../services/transactionService";
 import useTransactionStore from "../../store/transactionStore";
+import useCustomerStore from "../../store/customerStore";
 import { LinearGradient } from "expo-linear-gradient";
 
 let ExpoSpeechRecognitionModule = null;
@@ -68,6 +69,11 @@ const DashboardScreen = ({ navigation }) => {
   const [isCandidateModalVisible, setIsCandidateModalVisible] = useState(false);
 
   const { addCredit, addPayment } = useTransactionStore();
+  const { createCustomer } = useCustomerStore();
+
+  const [isNewCustomerModalVisible, setIsNewCustomerModalVisible] = useState(false);
+  const [newCustomerData, setNewCustomerData] = useState(null);
+  const [newCustomerPhone, setNewCustomerPhone] = useState("");
 
   // Speech Recognition hook listeners
   useSpeechRecognitionEvent("start", () => setIsListening(true));
@@ -187,6 +193,16 @@ const DashboardScreen = ({ navigation }) => {
             `Recorded ${res.data.transaction.type} entry of ${formatCurrency(parseFloat(res.data.transaction.amount), currencyCode)} for ${res.data.customer.name}.`
           );
           fetchDashboard();
+        } else if (res.action === "CUSTOMER_NOT_FOUND") {
+          setNewCustomerData({
+            name: res.data.customerName,
+            amount: res.data.amount,
+            description: res.data.description,
+            type: res.data.type
+          });
+          setNewCustomerPhone("");
+          setIsVoiceModalVisible(false);
+          setIsNewCustomerModalVisible(true);
         }
       }
     } catch (err) {
@@ -228,6 +244,64 @@ const DashboardScreen = ({ navigation }) => {
       Alert.alert("Error", err.response?.data?.message || err.message || "Failed to save transaction.");
     } finally {
       setIsVoiceProcessing(false);
+    }
+  };
+
+  const handleAddAndRecordNewCustomer = async () => {
+    if (!newCustomerPhone.trim()) {
+      Alert.alert("Phone Required", "Please enter the customer's phone number.");
+      return;
+    }
+    const cleanPhone = newCustomerPhone.replace(/\s/g, "");
+    if (!/^\+?[0-9]{7,15}$/.test(cleanPhone)) {
+      Alert.alert("Invalid Phone", "Please enter a valid 7-15 digit mobile number.");
+      return;
+    }
+
+    setIsNewCustomerModalVisible(false);
+    setIsVoiceProcessing(true);
+    try {
+      // 1. Create the customer first
+      const newCustomer = await createCustomer({
+        name: newCustomerData.name,
+        phone: cleanPhone
+      });
+
+      if (!newCustomer) {
+        Alert.alert("Error", useCustomerStore.getState().error || "Failed to create customer.");
+        return;
+      }
+
+      // 2. Add the transaction for the newly created customer
+      const txnData = {
+        amount: newCustomerData.amount,
+        description: newCustomerData.description || undefined
+      };
+
+      let res;
+      if (newCustomerData.type === "PAYMENT") {
+        res = await addPayment(newCustomer.id, txnData);
+      } else {
+        res = await addCredit(newCustomer.id, txnData);
+      }
+
+      if (!res) {
+        Alert.alert("Error", useTransactionStore.getState().error || "Failed to save transaction.");
+        return;
+      }
+
+      Alert.alert(
+        "Success 🎉",
+        `Created customer "${newCustomer.name}" and recorded ${newCustomerData.type} entry of ₹${newCustomerData.amount}.`
+      );
+      fetchDashboard();
+    } catch (err) {
+      console.warn("Failed to add and record customer:", err);
+      Alert.alert("Error", err.response?.data?.message || err.message || "Failed to complete operations.");
+    } finally {
+      setIsVoiceProcessing(false);
+      setNewCustomerData(null);
+      setNewCustomerPhone("");
     }
   };
 
@@ -650,6 +724,48 @@ const DashboardScreen = ({ navigation }) => {
             >
               <Text style={styles.closeCandidatesBtnText}>Close</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Add New Customer Modal */}
+      <Modal
+        visible={isNewCustomerModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsNewCustomerModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.candidatesCard}>
+            <Text style={styles.candidatesTitle}>Grahak Not Found</Text>
+            <Text style={styles.candidatesSubtitle}>
+              Customer "{newCustomerData?.name}" was not found. Enter their mobile number to add them and record this transaction:
+            </Text>
+
+            <TextInput
+              style={styles.simulatorInput}
+              placeholder="Mobile Number (e.g. 9876543210)"
+              placeholderTextColor={Colors.textPlaceholder}
+              keyboardType="phone-pad"
+              value={newCustomerPhone}
+              onChangeText={setNewCustomerPhone}
+            />
+
+            <View style={styles.voiceModalActions}>
+              <TouchableOpacity
+                onPress={() => setIsNewCustomerModalVisible(false)}
+                style={[styles.voiceActionBtn, styles.voiceCancelBtn]}
+              >
+                <Text style={styles.voiceCancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleAddAndRecordNewCustomer}
+                style={[styles.voiceActionBtn, styles.voiceSubmitBtn]}
+              >
+                <Text style={styles.voiceSubmitBtnText}>Add & Record</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
