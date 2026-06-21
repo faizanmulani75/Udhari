@@ -56,6 +56,7 @@ const exportRoutes = require("./routes/exportRoutes");
 const reminderRoutes = require("./routes/reminderRoutes");
 const tagRoutes = require("./routes/tagRoutes");
 const noteRoutes = require("./routes/noteRoutes");
+const sanitizeInput = require("./middleware/sanitizeInput");
 
 const app = express();
 
@@ -68,6 +69,7 @@ app.use(requestLogger);
 app.use(globalLimiter);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+app.use(sanitizeInput);
 
 // ── Health Check ─────────────────────────────────────────
 

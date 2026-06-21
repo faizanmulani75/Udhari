@@ -58,7 +58,6 @@ const DashboardScreen = ({ navigation }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isSendingBulk, setIsSendingBulk] = useState(false);
 
   const [isVoiceModalVisible, setIsVoiceModalVisible] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState("");
@@ -305,22 +304,6 @@ const DashboardScreen = ({ navigation }) => {
     }
   };
 
-  const handleSendBulkReminders = async () => {
-    setIsSendingBulk(true);
-    try {
-      const res = await sendBulkReminders();
-      Alert.alert(
-        "Reminders Sent 🎉",
-        `Successfully sent payment reminders to ${res.data?.totalSent || 0} customers with outstanding balances.`
-      );
-    } catch (err) {
-      console.warn("Failed to send bulk reminders:", err);
-      Alert.alert("Error", err.response?.data?.message || err.message || "Failed to send reminders.");
-    } finally {
-      setIsSendingBulk(false);
-    }
-  };
-
   const checkPendingSync = async () => {
     const txs = await getOfflineTransactions();
     setPendingSyncCount(txs.length);
@@ -494,32 +477,14 @@ const DashboardScreen = ({ navigation }) => {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Quick Actions</Text>
               <View style={styles.quickActionsContainer}>
-                <View style={{ flexDirection: "row", gap: 12 }}>
-                  <TouchableOpacity
-                    style={[styles.quickActionBtn, { flex: 1 }, isSendingBulk && { opacity: 0.7 }]}
-                    onPress={handleSendBulkReminders}
-                    disabled={isSendingBulk}
-                    activeOpacity={0.8}
-                  >
-                    {isSendingBulk ? (
-                      <ActivityIndicator size="small" color={Colors.white} />
-                    ) : (
-                      <>
-                        <Feather name="bell" size={16} color={Colors.white} style={{ marginRight: 8 }} />
-                        <Text style={styles.quickActionBtnText}>Remind All</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.quickActionBtn, { flex: 1, backgroundColor: "#05D59A" }]}
-                    onPress={startVoiceEntry}
-                    activeOpacity={0.8}
-                  >
-                    <Feather name="mic" size={16} color={Colors.white} style={{ marginRight: 8 }} />
-                    <Text style={styles.quickActionBtnText}>Voice Entry</Text>
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  style={[styles.quickActionBtn, { backgroundColor: "#05D59A" }]}
+                  onPress={startVoiceEntry}
+                  activeOpacity={0.8}
+                >
+                  <Feather name="mic" size={16} color={Colors.white} style={{ marginRight: 8 }} />
+                  <Text style={styles.quickActionBtnText}>Voice Entry</Text>
+                </TouchableOpacity>
               </View>
             </View>
 
