@@ -248,10 +248,25 @@ Input text: "${text}"`
       });
       
       let matchedName = null;
+      // 1. Try exact full name match (case-insensitive)
       for (const c of customers) {
         if (textLower.includes(c.name.toLowerCase())) {
           matchedName = c.name;
           break;
+        }
+      }
+      
+      // 2. If no full name match, try matching the first word of the customer name (if >= 3 chars)
+      if (!matchedName) {
+        for (const c of customers) {
+          const parts = c.name.split(/\s+/);
+          if (parts.length > 0) {
+            const firstName = parts[0].toLowerCase();
+            if (firstName.length >= 3 && textLower.includes(firstName)) {
+              matchedName = c.name;
+              break;
+            }
+          }
         }
       }
 
