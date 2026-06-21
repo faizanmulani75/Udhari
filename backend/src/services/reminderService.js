@@ -34,7 +34,7 @@ const sendSingleReminder = async (shopId, customerId, userId) => {
     data: {
       shopId,
       customerId,
-      channel: "SMS",
+      channel: "WHATSAPP",
       status: "SENT",
       message,
       amountDue: customer.balance,
@@ -49,7 +49,7 @@ const sendSingleReminder = async (shopId, customerId, userId) => {
     data: { lastReminderAt: new Date() },
   });
 
-  console.log(`📱 [Reminder] Sent to ${customer.name} (${customer.phone}) — ${customer.shop.currency} ${balance.toFixed(2)}`);
+  console.log(`💬 [Simulated WhatsApp] Sent to ${customer.name} (${customer.phone}) — ${customer.shop.currency} ${balance.toFixed(2)}`);
 
   return { reminder, customer: { name: customer.name, phone: customer.phone, balance } };
 };
@@ -91,7 +91,7 @@ const sendBulkReminders = async (shopId, userId) => {
       data: {
         shopId,
         customerId: customer.id,
-        channel: "SMS",
+        channel: "WHATSAPP",
         status: "SENT",
         message,
         amountDue: customer.balance,
@@ -113,7 +113,7 @@ const sendBulkReminders = async (shopId, userId) => {
       reminderId: reminder.id,
     });
 
-    console.log(`📱 [Bulk Reminder] → ${customer.name} (${customer.phone})`);
+    console.log(`💬 [Simulated WhatsApp Bulk] → ${customer.name} (${customer.phone}) | Message: ${message}`);
   }
 
   return {

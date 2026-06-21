@@ -62,7 +62,8 @@ api.interceptors.response.use(
       error.message ||
       "Something went wrong. Please try again.";
 
-    return Promise.reject(new Error(message));
+    error.message = message;
+    return Promise.reject(error);
   }
 );
 

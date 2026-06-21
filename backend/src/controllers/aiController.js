@@ -148,3 +148,192 @@ Input text: "${text}"`
     });
   }
 };
+
+const transactionService = require("../services/transactionService");
+const prisma = require("../config/prisma");
+
+exports.voiceEntry = async (req, res, next) => {
+  try {
+    const { text } = req.body;
+    if (!text || typeof text !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Text field is required and must be a string",
+      });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    const isApiKeyConfigured = apiKey && apiKey !== "your_gemini_api_key_here" && apiKey.trim() !== "";
+    
+    let parsedData = null;
+
+    if (isApiKeyConfigured) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    {
+                      text: `You are an AI assistant for a shopkeeper khata bookkeeping app.
+Parse the following voice entry text (which may be mixed English, Hindi, or Hinglish) and extract:
+1. The customer name (the person involved).
+2. A cleaned concise description of the items/reason.
+3. The numerical amount/cost.
+4. The type of transaction (either "CREDIT" if it is given/sold/lent on credit/udhari/borrowed, or "PAYMENT" if they paid back/returned cash/settled balance). If not clear, default to "CREDIT".
+
+Output your response ONLY as a valid JSON object matching this schema:
+{
+  "customerName": "string or null",
+  "amount": number,
+  "description": "string",
+  "type": "CREDIT" | "PAYMENT"
+}
+
+Input text: "${text}"`
+                    }
+                  ]
+                }
+              ]
+            })
+          }
+        );
+
+        if (response.ok) {
+          const json = await response.json();
+          const outputText = json.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (outputText) {
+            let cleanText = outputText.trim();
+            if (cleanText.startsWith("```")) {
+              cleanText = cleanText.replace(/^```(?:json)?\n?|```$/g, "").trim();
+            }
+            const data = JSON.parse(cleanText);
+            parsedData = {
+              customerName: data.customerName || null,
+              amount: Number(data.amount) || 0,
+              description: data.description || "",
+              type: data.type === "PAYMENT" ? "PAYMENT" : "CREDIT"
+            };
+          }
+        }
+      } catch (err) {
+        console.error("Gemini voiceEntry API call failed, falling back to local parsing:", err);
+      }
+    }
+
+    // Smart Local Fallback
+    if (!parsedData) {
+      const fallbackResult = localFallbackParse(text);
+      const textLower = text.toLowerCase();
+      
+      // Determine type based on keywords
+      const isPayment = textLower.includes("paid") || 
+                        textLower.includes("received") || 
+                        textLower.includes("mila") || 
+                        textLower.includes("jama") || 
+                        textLower.includes("payment") || 
+                        textLower.includes("settle") || 
+                        textLower.includes("back");
+                        
+      // Find matching customer name in the text
+      const customers = await prisma.customer.findMany({
+        where: { shopId: req.shopId, deletedAt: null, isActive: true },
+        select: { id: true, name: true }
+      });
+      
+      let matchedName = null;
+      for (const c of customers) {
+        if (textLower.includes(c.name.toLowerCase())) {
+          matchedName = c.name;
+          break;
+        }
+      }
+
+      parsedData = {
+        customerName: matchedName,
+        amount: fallbackResult.amount,
+        description: fallbackResult.description,
+        type: isPayment ? "PAYMENT" : "CREDIT"
+      };
+    }
+
+    const searchName = parsedData.customerName ? parsedData.customerName.trim() : "";
+    if (!searchName) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer name could not be parsed from voice entry."
+      });
+    }
+
+    // Find all matching customers (case-insensitive contains search)
+    const matchingCustomers = await prisma.customer.findMany({
+      where: {
+        shopId: req.shopId,
+        deletedAt: null,
+        isActive: true,
+        name: {
+          contains: searchName,
+          mode: "insensitive"
+        }
+      },
+      select: { id: true, name: true, phone: true, balance: true }
+    });
+
+    if (matchingCustomers.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `Customer "${searchName}" not found`
+      });
+    }
+
+    if (matchingCustomers.length > 1) {
+      return res.json({
+        success: true,
+        action: "SELECT_CUSTOMER",
+        data: {
+          amount: parsedData.amount,
+          description: parsedData.description,
+          type: parsedData.type,
+          candidates: matchingCustomers
+        }
+      });
+    }
+
+    // Exactly 1 customer matches, create transaction automatically
+    const customer = matchingCustomers[0];
+    const txnData = {
+      amount: parsedData.amount,
+      description: parsedData.description || undefined
+    };
+
+    let result;
+    if (parsedData.type === "PAYMENT") {
+      result = await transactionService.addPayment(req.shopId, customer.id, txnData, req.userId);
+    } else {
+      result = await transactionService.addCredit(req.shopId, customer.id, txnData, req.userId);
+    }
+
+    return res.json({
+      success: true,
+      action: "TRANSACTION_CREATED",
+      data: {
+        transaction: result.transaction,
+        newBalance: result.newBalance,
+        customer: { id: customer.id, name: customer.name, balance: result.newBalance }
+      }
+    });
+
+  } catch (err) {
+    console.error("Voice entry failed:", err);
+    return res.status(500).json({
+      success: false,
+      message: "An internal server error occurred while processing voice entry."
+    });
+  }
+};

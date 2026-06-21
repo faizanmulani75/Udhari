@@ -112,7 +112,7 @@ const CustomerDetailScreen = ({ route, navigation }) => {
       setNewTagName("");
     } catch (err) {
       console.warn("Failed to create tag:", err);
-      Alert.alert("Error", err.response?.data?.message || "Failed to create tag.");
+      Alert.alert("Error", err.response?.data?.message || err.message || "Failed to create tag.");
     }
   };
 

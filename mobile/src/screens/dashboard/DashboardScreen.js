@@ -12,6 +12,8 @@ import {
   ActivityIndicator,
   StatusBar,
   Alert,
+  Modal,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -23,7 +25,20 @@ import Colors from "../../constants/colors";
 import { formatCurrency, formatDate } from "../../utils/format";
 import { getOfflineTransactions, syncQueuedTransactions } from "../../utils/syncManager";
 import { sendBulkReminders } from "../../services/reminderService";
+import { voiceEntry } from "../../services/transactionService";
+import useTransactionStore from "../../store/transactionStore";
 import { LinearGradient } from "expo-linear-gradient";
+
+let ExpoSpeechRecognitionModule = null;
+let useSpeechRecognitionEvent = () => {};
+
+try {
+  const speechModule = require("expo-speech-recognition");
+  ExpoSpeechRecognitionModule = speechModule.ExpoSpeechRecognitionModule;
+  useSpeechRecognitionEvent = speechModule.useSpeechRecognitionEvent;
+} catch (e) {
+  console.warn("expo-speech-recognition native module not available.");
+}
 
 const DashboardScreen = ({ navigation }) => {
   const { user } = useAuthStore();
@@ -44,6 +59,178 @@ const DashboardScreen = ({ navigation }) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSendingBulk, setIsSendingBulk] = useState(false);
 
+  const [isVoiceModalVisible, setIsVoiceModalVisible] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const [isVoiceProcessing, setIsVoiceProcessing] = useState(false);
+  const [voiceParsedData, setVoiceParsedData] = useState(null);
+  const [candidates, setCandidates] = useState([]);
+  const [isCandidateModalVisible, setIsCandidateModalVisible] = useState(false);
+
+  const { addCredit, addPayment } = useTransactionStore();
+
+  // Speech Recognition hook listeners
+  useSpeechRecognitionEvent("start", () => setIsListening(true));
+  useSpeechRecognitionEvent("end", () => setIsListening(false));
+  useSpeechRecognitionEvent("result", (event) => {
+    if (event.results && event.results[0]) {
+      setVoiceTranscript(event.results[0].transcript);
+    }
+  });
+  useSpeechRecognitionEvent("error", (event) => {
+    if (event.error !== "no-speech") {
+      console.log("Speech recognition error:", event.error);
+    }
+    setIsListening(false);
+  });
+
+  const startVoiceEntry = async () => {
+    setVoiceTranscript("");
+    setVoiceParsedData(null);
+    setCandidates([]);
+    setIsVoiceModalVisible(true);
+
+    if (ExpoSpeechRecognitionModule) {
+      try {
+        const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+        if (!result.granted) {
+          Alert.alert("Permission Required", "Microphone and speech recognition permission is required for voice entry.");
+          setIsVoiceModalVisible(false);
+          return;
+        }
+        setIsListening(true);
+        await ExpoSpeechRecognitionModule.start({
+          lang: "en-IN",
+          interimResults: true,
+          maxAlternatives: 1,
+          continuous: true,
+        });
+      } catch (err) {
+        console.warn("Failed to start speech recognition:", err);
+        setIsListening(false);
+      }
+    }
+  };
+
+  const toggleVoiceListening = async () => {
+    if (!ExpoSpeechRecognitionModule) {
+      Alert.alert("Simulator Mode", "Please type the text manually in the field below to test.");
+      return;
+    }
+
+    if (isListening) {
+      try {
+        await ExpoSpeechRecognitionModule.stop();
+      } catch (err) {
+        console.warn(err);
+        setIsListening(false);
+      }
+    } else {
+      try {
+        setIsListening(true);
+        await ExpoSpeechRecognitionModule.start({
+          lang: "en-IN",
+          interimResults: true,
+          maxAlternatives: 1,
+          continuous: true,
+        });
+      } catch (err) {
+        console.warn(err);
+        setIsListening(false);
+      }
+    }
+  };
+
+  const cancelVoiceEntry = async () => {
+    if (isListening && ExpoSpeechRecognitionModule) {
+      try {
+        await ExpoSpeechRecognitionModule.stop();
+      } catch (err) {
+        console.warn(err);
+      }
+    }
+    setIsVoiceModalVisible(false);
+  };
+
+  const processVoiceEntry = async () => {
+    if (isListening && ExpoSpeechRecognitionModule) {
+      try {
+        await ExpoSpeechRecognitionModule.stop();
+      } catch (err) {
+        console.warn(err);
+      }
+    }
+
+    if (!voiceTranscript.trim()) {
+      Alert.alert("Empty Input", "Please speak or type some text first.");
+      return;
+    }
+
+    setIsVoiceProcessing(true);
+    try {
+      const res = await voiceEntry(voiceTranscript);
+
+      if (res && res.success) {
+        if (res.action === "SELECT_CUSTOMER") {
+          setVoiceParsedData({
+            amount: res.data.amount,
+            description: res.data.description,
+            type: res.data.type
+          });
+          setCandidates(res.data.candidates);
+          setIsVoiceModalVisible(false);
+          setIsCandidateModalVisible(true);
+        } else if (res.action === "TRANSACTION_CREATED") {
+          setIsVoiceModalVisible(false);
+          Alert.alert(
+            "Transaction Created 🎉",
+            `Recorded ${res.data.transaction.type} entry of ${formatCurrency(parseFloat(res.data.transaction.amount), currencyCode)} for ${res.data.customer.name}.`
+          );
+          fetchDashboard();
+        }
+      }
+    } catch (err) {
+      console.warn("Voice entry parsing failed:", err);
+      Alert.alert("Error", err.response?.data?.message || err.message || "Failed to process voice entry.");
+    } finally {
+      setIsVoiceProcessing(false);
+    }
+  };
+
+  const selectCandidate = async (selectedCustomer) => {
+    setIsCandidateModalVisible(false);
+    setIsVoiceProcessing(true);
+    try {
+      const txnData = {
+        amount: voiceParsedData.amount,
+        description: voiceParsedData.description || undefined
+      };
+
+      let res;
+      if (voiceParsedData.type === "PAYMENT") {
+        res = await addPayment(selectedCustomer.id, txnData);
+      } else {
+        res = await addCredit(selectedCustomer.id, txnData);
+      }
+
+      if (!res) {
+        Alert.alert("Error", useTransactionStore.getState().error || "Failed to save transaction.");
+        return;
+      }
+
+      Alert.alert(
+        "Transaction Created 🎉",
+        `Successfully added ${voiceParsedData.type} entry of ₹${voiceParsedData.amount} for ${selectedCustomer.name}.`
+      );
+      fetchDashboard();
+    } catch (err) {
+      console.warn("Failed to create candidate transaction:", err);
+      Alert.alert("Error", err.response?.data?.message || err.message || "Failed to save transaction.");
+    } finally {
+      setIsVoiceProcessing(false);
+    }
+  };
+
   const handleSendBulkReminders = async () => {
     setIsSendingBulk(true);
     try {
@@ -54,7 +241,7 @@ const DashboardScreen = ({ navigation }) => {
       );
     } catch (err) {
       console.warn("Failed to send bulk reminders:", err);
-      Alert.alert("Error", err.response?.data?.message || "Failed to send reminders.");
+      Alert.alert("Error", err.response?.data?.message || err.message || "Failed to send reminders.");
     } finally {
       setIsSendingBulk(false);
     }
@@ -233,21 +420,32 @@ const DashboardScreen = ({ navigation }) => {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Quick Actions</Text>
               <View style={styles.quickActionsContainer}>
-                <TouchableOpacity
-                  style={[styles.quickActionBtn, isSendingBulk && { opacity: 0.7 }]}
-                  onPress={handleSendBulkReminders}
-                  disabled={isSendingBulk}
-                  activeOpacity={0.8}
-                >
-                  {isSendingBulk ? (
-                    <ActivityIndicator size="small" color={Colors.white} />
-                  ) : (
-                    <>
-                      <Feather name="bell" size={16} color={Colors.white} style={{ marginRight: 8 }} />
-                      <Text style={styles.quickActionBtnText}>Send Reminders to All</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                <View style={{ flexDirection: "row", gap: 12 }}>
+                  <TouchableOpacity
+                    style={[styles.quickActionBtn, { flex: 1 }, isSendingBulk && { opacity: 0.7 }]}
+                    onPress={handleSendBulkReminders}
+                    disabled={isSendingBulk}
+                    activeOpacity={0.8}
+                  >
+                    {isSendingBulk ? (
+                      <ActivityIndicator size="small" color={Colors.white} />
+                    ) : (
+                      <>
+                        <Feather name="bell" size={16} color={Colors.white} style={{ marginRight: 8 }} />
+                        <Text style={styles.quickActionBtnText}>Remind All</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.quickActionBtn, { flex: 1, backgroundColor: "#05D59A" }]}
+                    onPress={startVoiceEntry}
+                    activeOpacity={0.8}
+                  >
+                    <Feather name="mic" size={16} color={Colors.white} style={{ marginRight: 8 }} />
+                    <Text style={styles.quickActionBtnText}>Voice Entry</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
 
@@ -338,6 +536,123 @@ const DashboardScreen = ({ navigation }) => {
           </>
         )}
       </ScrollView>
+
+      {/* Voice Entry Modal */}
+      <Modal
+        visible={isVoiceModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={cancelVoiceEntry}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.voiceCard}>
+            <Text style={styles.voiceTitle}>Speak your Entry</Text>
+            <Text style={styles.voiceSubtitle}>
+              E.g., "gave 500 rupees to Test customer for rice"
+            </Text>
+            
+            <TouchableOpacity
+              onPress={toggleVoiceListening}
+              style={[
+                styles.voiceMicBtn,
+                isListening && styles.voiceMicBtnListening
+              ]}
+              activeOpacity={0.8}
+            >
+              <Feather name={isListening ? "mic" : "mic-off"} size={36} color={Colors.white} />
+            </TouchableOpacity>
+
+            <Text style={styles.voiceStatusText}>
+              {isListening ? "Listening... Tap to Stop" : "Tap microphone to speak"}
+            </Text>
+
+            <ScrollView style={styles.transcriptScroll}>
+              <Text style={styles.transcriptText}>
+                {voiceTranscript || "Your spoken words will appear here..."}
+              </Text>
+            </ScrollView>
+
+            {/* Test keyboard input if native module isn't active (Expo Go/Simulators) */}
+            {!ExpoSpeechRecognitionModule && (
+              <TextInput
+                style={styles.simulatorInput}
+                placeholder="Or type voice input simulation here..."
+                placeholderTextColor={Colors.textPlaceholder}
+                value={voiceTranscript}
+                onChangeText={setVoiceTranscript}
+              />
+            )}
+
+            <View style={styles.voiceModalActions}>
+              <TouchableOpacity
+                onPress={cancelVoiceEntry}
+                style={[styles.voiceActionBtn, styles.voiceCancelBtn]}
+              >
+                <Text style={styles.voiceCancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                onPress={processVoiceEntry}
+                disabled={!voiceTranscript || isVoiceProcessing}
+                style={[
+                  styles.voiceActionBtn,
+                  styles.voiceSubmitBtn,
+                  (!voiceTranscript || isVoiceProcessing) && { opacity: 0.5 }
+                ]}
+              >
+                {isVoiceProcessing ? (
+                  <ActivityIndicator size="small" color={Colors.white} />
+                ) : (
+                  <Text style={styles.voiceSubmitBtnText}>Process AI</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Candidates Selection Modal */}
+      <Modal
+        visible={isCandidateModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsCandidateModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.candidatesCard}>
+            <Text style={styles.candidatesTitle}>Multiple matches found</Text>
+            <Text style={styles.candidatesSubtitle}>
+              Select the correct customer for this transaction:
+            </Text>
+
+            <ScrollView style={styles.candidatesList} showsVerticalScrollIndicator={true}>
+              {candidates.map((c) => (
+                <TouchableOpacity
+                  key={c.id}
+                  onPress={() => selectCandidate(c)}
+                  style={styles.candidateItem}
+                  activeOpacity={0.7}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.candidateName}>{c.name}</Text>
+                    <Text style={styles.candidatePhone}>{c.phone || "No phone"}</Text>
+                  </View>
+                  <Text style={styles.candidateBalance}>
+                    Balance: {formatCurrency(Math.abs(parseFloat(c.balance || 0)), currencyCode)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <TouchableOpacity
+              onPress={() => setIsCandidateModalVisible(false)}
+              style={styles.closeCandidatesBtn}
+            >
+              <Text style={styles.closeCandidatesBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -659,6 +974,184 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontSize: 14,
     fontWeight: "700",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(10, 10, 15, 0.85)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  voiceCard: {
+    backgroundColor: Colors.bgCard,
+    width: "100%",
+    maxWidth: 380,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    padding: 24,
+    alignItems: "center",
+  },
+  voiceTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: Colors.white,
+    marginBottom: 6,
+  },
+  voiceSubtitle: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 18,
+    marginBottom: 24,
+  },
+  voiceMicBtn: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  voiceMicBtnListening: {
+    backgroundColor: Colors.error,
+    shadowColor: Colors.error,
+  },
+  voiceStatusText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: Colors.textMuted,
+    marginBottom: 20,
+  },
+  transcriptScroll: {
+    width: "100%",
+    maxHeight: 120,
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    padding: 12,
+    marginBottom: 24,
+  },
+  transcriptText: {
+    fontSize: 14,
+    color: Colors.textPrimary,
+    lineHeight: 20,
+  },
+  voiceModalActions: {
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+  },
+  voiceActionBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  voiceCancelBtn: {
+    backgroundColor: Colors.bgElevated,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  voiceCancelBtnText: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  voiceSubmitBtn: {
+    backgroundColor: Colors.success,
+  },
+  voiceSubmitBtnText: {
+    color: Colors.white,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  candidatesCard: {
+    backgroundColor: Colors.bgCard,
+    width: "100%",
+    maxWidth: 380,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    padding: 24,
+  },
+  candidatesTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: Colors.white,
+    marginBottom: 6,
+    textAlign: "center",
+  },
+  candidatesSubtitle: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  candidatesList: {
+    maxHeight: 200,
+    width: "100%",
+    marginBottom: 20,
+  },
+  candidateItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 12,
+    marginBottom: 8,
+  },
+  candidateName: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: Colors.white,
+  },
+  candidatePhone: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  candidateBalance: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: Colors.error,
+  },
+  closeCandidatesBtn: {
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: Colors.bgElevated,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  closeCandidatesBtnText: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  simulatorInput: {
+    width: "100%",
+    height: 44,
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 12,
+    color: Colors.white,
+    fontSize: 14,
+    marginBottom: 16,
   },
 });
 

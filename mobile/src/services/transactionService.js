@@ -105,3 +105,14 @@ export const parseTransactionWithAI = async (text) => {
   const response = await api.post("/ai/parse-transaction", { text });
   return response.data;
 };
+
+/**
+ * Submit voice entry transcription to parse and record a transaction.
+ *
+ * @param {string} text
+ * @returns {Promise<object>} - { success, action, data }
+ */
+export const voiceEntry = async (text) => {
+  const response = await api.post("/ai/voice-entry", { text });
+  return response.data;
+};
