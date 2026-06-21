@@ -103,6 +103,16 @@ const SubscriptionScreen = ({ navigation }) => {
 
     setIsLoading(true);
     try {
+      // Guard: ensure native Razorpay module is available
+      if (!RazorpayCheckout || typeof RazorpayCheckout.open !== "function") {
+        setIsLoading(false);
+        Alert.alert(
+          "Payment Unavailable",
+          "Razorpay native module is not available. Please use a native (non-Expo Go) build of the app."
+        );
+        return;
+      }
+
       // 1. Create order on backend
       const orderRes = await createSubscriptionOrder(plan);
       if (orderRes && orderRes.success) {
@@ -125,6 +135,8 @@ const SubscriptionScreen = ({ navigation }) => {
           theme: { color: Colors.primary }
         };
 
+        // Keep spinner visible while Razorpay sheet is open;
+        // reset loading only inside .then() and .catch()
         RazorpayCheckout.open(options)
           .then(async (data) => {
             // 2. Verify payment on backend
@@ -163,15 +175,16 @@ const SubscriptionScreen = ({ navigation }) => {
           })
           .catch((paymentErr) => {
             console.warn("Razorpay payment sheet dismissed/failed:", paymentErr);
+            setIsLoading(false);
             Alert.alert("Payment Cancelled", "The payment process was cancelled or failed.");
           });
       } else {
         Alert.alert("Order Error", orderRes.message || "Could not initialize payment order.");
+        setIsLoading(false);
       }
     } catch (err) {
       console.warn("Error starting upgrade flow:", err);
       Alert.alert("Connection Error", "Failed to connect to billing server. Please try again.");
-    } finally {
       setIsLoading(false);
     }
   };
