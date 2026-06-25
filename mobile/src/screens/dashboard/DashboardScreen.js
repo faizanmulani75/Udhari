@@ -14,6 +14,7 @@ import {
   Alert,
   Modal,
   TextInput,
+  LayoutAnimation,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -324,6 +325,11 @@ const DashboardScreen = ({ navigation }) => {
       }
     }
   };
+
+  // Smooth Layout Animations for loading, modal, and data sync changes
+  useEffect(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  }, [summary, topDebtors, recentActivity, isLoading, isVoiceModalVisible, isCandidateModalVisible, isNewCustomerModalVisible, pendingSyncCount]);
 
   // Fetch dashboard data on focus
   useFocusEffect(

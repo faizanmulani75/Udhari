@@ -1,7 +1,7 @@
 // src/screens/settings/AuditLogScreen.js
 // Screen to list audit log events of the shop. Only accessible by owners.
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,11 +12,64 @@ import {
   ActivityIndicator,
   RefreshControl,
   StatusBar,
+  LayoutAnimation,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import Colors from "../../constants/colors";
 import { getAuditLogs } from "../../services/auditService";
+
+const getLogIcon = (action) => {
+  switch (action) {
+    case "CREATE_TRANSACTION":
+      return { name: "plus-circle", color: Colors.primaryLight };
+    case "REVERSE_TRANSACTION":
+      return { name: "rotate-ccw", color: Colors.error };
+    case "CREATE_CUSTOMER":
+      return { name: "user-plus", color: Colors.primary };
+    case "UPDATE_CUSTOMER":
+      return { name: "edit-2", color: Colors.accentLight };
+    case "DELETE_CUSTOMER":
+      return { name: "user-minus", color: Colors.error };
+    case "INVITE_STAFF":
+      return { name: "mail", color: Colors.primaryLight };
+    case "UPDATE_STAFF":
+      return { name: "shield", color: Colors.accent };
+    case "REMOVE_STAFF":
+      return { name: "user-x", color: Colors.error };
+    default:
+      return { name: "file-text", color: Colors.textSecondary };
+  }
+};
+
+// Memoized Audit Log Card to prevent stuttering
+const AuditLogCard = React.memo(({ item }) => {
+  const iconData = getLogIcon(item.action);
+  const dateStr = new Date(item.createdAt).toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  return (
+    <View style={styles.logCard}>
+      <View style={styles.iconContainer}>
+        <Feather name={iconData.name} size={18} color={iconData.color} />
+      </View>
+      <View style={styles.logDetails}>
+        <View style={styles.logHeader}>
+          <Text style={styles.operatorText}>
+            {item.userName}{" "}
+            <Text style={styles.roleText}>({item.userRole.toUpperCase()})</Text>
+          </Text>
+          <Text style={styles.timeText}>{dateStr}</Text>
+        </View>
+        <Text style={styles.detailsText}>{item.details}</Text>
+        <Text style={styles.actionTag}>{item.action}</Text>
+      </View>
+    </View>
+  );
+});
 
 const AuditLogScreen = ({ navigation }) => {
   const [logs, setLogs] = useState([]);
@@ -25,13 +78,12 @@ const AuditLogScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const fetchLogs = async (showLoader = true) => {
+  const fetchLogs = useCallback(async (showLoader = true) => {
     if (showLoader) setIsLoading(true);
     try {
       const res = await getAuditLogs();
       if (res && res.success && res.data) {
         setLogs(res.data);
-        applyFilter(res.data, searchQuery);
       }
     } catch (err) {
       console.warn("Failed to fetch audit logs:", err);
@@ -39,18 +91,19 @@ const AuditLogScreen = ({ navigation }) => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchLogs();
-  }, []);
+  }, [fetchLogs]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
     fetchLogs(false);
-  };
+  }, [fetchLogs]);
 
-  const applyFilter = (allLogs, query) => {
+  // Stable filter callback
+  const applyFilter = useCallback((allLogs, query) => {
     if (!query.trim()) {
       setFilteredLogs(allLogs);
       return;
@@ -65,62 +118,25 @@ const AuditLogScreen = ({ navigation }) => {
       );
     });
     setFilteredLogs(filtered);
-  };
+  }, []);
 
-  const handleSearch = (text) => {
+  // Sync filter results to logs / search query updates
+  useEffect(() => {
+    applyFilter(logs, searchQuery);
+  }, [logs, searchQuery, applyFilter]);
+
+  // LayoutAnimation triggers when list content or load status shifts
+  useEffect(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  }, [filteredLogs, isLoading]);
+
+  const handleSearch = useCallback((text) => {
     setSearchQuery(text);
-    applyFilter(logs, text);
-  };
+  }, []);
 
-  const getLogIcon = (action) => {
-    switch (action) {
-      case "CREATE_TRANSACTION":
-        return { name: "plus-circle", color: Colors.primaryLight };
-      case "REVERSE_TRANSACTION":
-        return { name: "rotate-ccw", color: Colors.error };
-      case "CREATE_CUSTOMER":
-        return { name: "user-plus", color: Colors.primary };
-      case "UPDATE_CUSTOMER":
-        return { name: "edit-2", color: Colors.accentLight };
-      case "DELETE_CUSTOMER":
-        return { name: "user-minus", color: Colors.error };
-      case "INVITE_STAFF":
-        return { name: "mail", color: Colors.primaryLight };
-      case "UPDATE_STAFF":
-        return { name: "shield", color: Colors.accent };
-      case "REMOVE_STAFF":
-        return { name: "user-x", color: Colors.error };
-      default:
-        return { name: "file-text", color: Colors.textSecondary };
-    }
-  };
-
-  const renderLogItem = ({ item }) => {
-    const iconData = getLogIcon(item.action);
-    const dateStr = new Date(item.createdAt).toLocaleString(undefined, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
-
-    return (
-      <View style={styles.logCard}>
-        <View style={styles.iconContainer}>
-          <Feather name={iconData.name} size={18} color={iconData.color} />
-        </View>
-        <View style={styles.logDetails}>
-          <View style={styles.logHeader}>
-            <Text style={styles.operatorText}>
-              {item.userName}{" "}
-              <Text style={styles.roleText}>({item.userRole.toUpperCase()})</Text>
-            </Text>
-            <Text style={styles.timeText}>{dateStr}</Text>
-          </View>
-          <Text style={styles.detailsText}>{item.details}</Text>
-          <Text style={styles.actionTag}>{item.action}</Text>
-        </View>
-      </View>
-    );
-  };
+  const renderLogItem = useCallback(({ item }) => (
+    <AuditLogCard item={item} />
+  ), []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -173,6 +189,10 @@ const AuditLogScreen = ({ navigation }) => {
           renderItem={renderLogItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
+          initialNumToRender={12}
+          maxToRenderPerBatch={12}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS === 'android'}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -186,6 +206,7 @@ const AuditLogScreen = ({ navigation }) => {
     </SafeAreaView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

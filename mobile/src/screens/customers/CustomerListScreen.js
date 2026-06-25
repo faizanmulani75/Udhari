@@ -14,6 +14,8 @@ import {
   StatusBar,
   ScrollView,
   Alert,
+  LayoutAnimation,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useCustomerStore from "../../store/customerStore";
@@ -23,6 +25,104 @@ import { formatCurrency } from "../../utils/format";
 import EmptyState from "../../components/common/EmptyState";
 import { Feather } from "@expo/vector-icons";
 import { getTags } from "../../services/tagService";
+
+// Memoized Customer Card Component to prevent redundant re-renders
+const CustomerCard = React.memo(({ item, currencyCode, onPress }) => {
+  const balance = parseFloat(item.balance || 0);
+  const creditLimit = parseFloat(item.creditLimit || 0);
+  const hasLimit = creditLimit > 0;
+  const limitPercentage = hasLimit ? (balance / creditLimit) * 100 : 0;
+
+  // Determine colors based on balance health
+  const isNegative = balance < 0; // Advance payment
+  const balanceColor = isNegative ? Colors.success : Colors.error;
+  const balanceLabel = isNegative ? "Advance (Jama)" : "Udhari (Due)";
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.card,
+        {
+          borderLeftWidth: 4,
+          borderLeftColor: balance === 0 ? Colors.border : balanceColor,
+        },
+      ]}
+      activeOpacity={0.8}
+      onPress={onPress}
+    >
+      <View style={styles.cardHeader}>
+        <View style={styles.avatarCircle}>
+          <Text style={styles.avatarText}>
+            {item.name.substring(0, 2).toUpperCase()}
+          </Text>
+        </View>
+        <View style={styles.infoContainer}>
+          <Text style={styles.customerName}>{item.name}</Text>
+          <View style={styles.phoneWrapper}>
+            <Feather name="phone" size={11} color={Colors.textMuted} style={styles.phoneIcon} />
+            <Text style={styles.customerPhone}>{item.phone}</Text>
+          </View>
+          {item.tags && item.tags.length > 0 && (
+            <View style={styles.cardTagsWrapper}>
+              {item.tags.map((ct) => (
+                <View
+                  key={ct.tag.id}
+                  style={[
+                    styles.cardTagBadge,
+                    {
+                      backgroundColor: ct.tag.color + "15",
+                      borderColor: ct.tag.color + "44",
+                    },
+                  ]}
+                >
+                  <Text style={[styles.cardTagBadgeText, { color: ct.tag.color }]}>
+                    {ct.tag.name}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+        <View style={styles.balanceContainer}>
+          <Text style={[styles.balanceText, { color: balanceColor }]}>
+            {formatCurrency(Math.abs(balance), currencyCode)}
+          </Text>
+          <Text style={styles.balanceLabel}>{balanceLabel}</Text>
+        </View>
+      </View>
+
+      {/* Credit limit warning bar if applicable */}
+      {hasLimit && balance > 0 && (
+        <View style={styles.limitBarWrapper}>
+          <View style={styles.limitBarHeader}>
+            <Text style={styles.limitBarText}>
+              Udhari Limit: {formatCurrency(creditLimit, currencyCode)}
+            </Text>
+            <Text
+              style={[
+                styles.limitPercentText,
+                limitPercentage >= 85 && { color: Colors.error },
+              ]}
+            >
+              {Math.round(limitPercentage)}% Used
+            </Text>
+          </View>
+          <View style={styles.progressBackground}>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width: `${Math.min(limitPercentage, 100)}%`,
+                  backgroundColor: limitPercentage >= 85 ? Colors.error : Colors.primary,
+                },
+              ]}
+            />
+          </View>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+});
 
 const CustomerListScreen = ({ navigation }) => {
   const {
@@ -42,33 +142,39 @@ const CustomerListScreen = ({ navigation }) => {
   const [allTags, setAllTags] = useState([]);
   const [selectedTagId, setSelectedTagId] = useState(null);
 
-  // Load customers and tags on mount
-  useEffect(() => {
-    fetchCustomers({ page: 1, search: "", tagId: "" });
-    loadTags();
-    fetchShop();
-  }, []);
-
-  const loadTags = async () => {
+  // Load tags helper
+  const loadTags = useCallback(async () => {
     try {
       const response = await getTags();
       setAllTags(response.data || []);
     } catch (err) {
       console.warn("Failed to load tags:", err);
     }
-  };
+  }, []);
 
-  const handleSelectTag = (tagId) => {
+  // Load customers and tags on mount
+  useEffect(() => {
+    fetchCustomers({ page: 1, search: "", tagId: "" });
+    loadTags();
+    fetchShop();
+  }, [fetchCustomers, loadTags, fetchShop]);
+
+  // Smooth Native Animations during layout changes (filtering, loading complete, etc.)
+  useEffect(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  }, [customers, isLoading]);
+
+  const handleSelectTag = useCallback((tagId) => {
     const nextTagId = selectedTagId === tagId ? null : tagId;
     setSelectedTagId(nextTagId);
     fetchCustomers({ page: 1, search: searchQuery, tagId: nextTagId || "" });
-  };
+  }, [selectedTagId, searchQuery, fetchCustomers]);
 
   // Debounced search / Search trigger
-  const handleSearch = (text) => {
+  const handleSearch = useCallback((text) => {
     setSearchQuery(text);
     fetchCustomers({ page: 1, search: text, tagId: selectedTagId || "" });
-  };
+  }, [selectedTagId, fetchCustomers]);
 
   // Pull to refresh
   const onRefresh = useCallback(async () => {
@@ -79,10 +185,10 @@ const CustomerListScreen = ({ navigation }) => {
       fetchShop(),
     ]);
     setIsRefreshing(false);
-  }, [searchQuery, selectedTagId]);
+  }, [searchQuery, selectedTagId, fetchCustomers, loadTags, fetchShop]);
 
   // Load more (pagination)
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
     if (!isLoading && meta.page < meta.totalPages) {
       fetchCustomers(
         {
@@ -93,9 +199,9 @@ const CustomerListScreen = ({ navigation }) => {
         true
       );
     }
-  };
+  }, [isLoading, meta, searchQuery, selectedTagId, fetchCustomers]);
 
-  const handleAddNewCustomer = () => {
+  const handleAddNewCustomer = useCallback(() => {
     const subscription = shop?.subscriptions?.[0];
     const maxCustomers = subscription ? subscription.maxCustomers : 10;
     const currentCount = meta?.totalCount || customers.length;
@@ -116,7 +222,7 @@ const CustomerListScreen = ({ navigation }) => {
       return;
     }
     navigation.navigate("AddCustomerScreen");
-  };
+  }, [shop, meta, customers, navigation]);
 
   // Calculate total outstanding balance for header summary
   const totalOutstanding = customers.reduce(
@@ -124,114 +230,27 @@ const CustomerListScreen = ({ navigation }) => {
     0
   );
 
-  const renderCustomerCard = ({ item }) => {
-    const balance = parseFloat(item.balance || 0);
-    const creditLimit = parseFloat(item.creditLimit || 0);
-    const hasLimit = creditLimit > 0;
-    const limitPercentage = hasLimit ? (balance / creditLimit) * 100 : 0;
+  const handleCardPress = useCallback((customerId) => {
+    clearSelectedCustomer();
+    navigation.navigate("CustomerDetailScreen", { customerId });
+  }, [clearSelectedCustomer, navigation]);
 
-    // Determine colors based on balance health
-    const isNegative = balance < 0; // Advance payment
-    const balanceColor = isNegative ? Colors.success : Colors.error;
-    const balanceLabel = isNegative ? "Advance (Jama)" : "Udhari (Due)";
+  const renderCustomerCard = useCallback(({ item }) => (
+    <CustomerCard
+      item={item}
+      currencyCode={currencyCode}
+      onPress={() => handleCardPress(item.id)}
+    />
+  ), [currencyCode, handleCardPress]);
 
-    return (
-      <TouchableOpacity
-        style={[
-          styles.card,
-          {
-            borderLeftWidth: 4,
-            borderLeftColor: balance === 0 ? Colors.border : balanceColor,
-          },
-        ]}
-        activeOpacity={0.8}
-        onPress={() => {
-          clearSelectedCustomer();
-          navigation.navigate("CustomerDetailScreen", { customerId: item.id });
-        }}
-      >
-        <View style={styles.cardHeader}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarText}>
-              {item.name.substring(0, 2).toUpperCase()}
-            </Text>
-          </View>
-          <View style={styles.infoContainer}>
-            <Text style={styles.customerName}>{item.name}</Text>
-            <View style={styles.phoneWrapper}>
-              <Feather name="phone" size={11} color={Colors.textMuted} style={styles.phoneIcon} />
-              <Text style={styles.customerPhone}>{item.phone}</Text>
-            </View>
-            {item.tags && item.tags.length > 0 && (
-              <View style={styles.cardTagsWrapper}>
-                {item.tags.map((ct) => (
-                  <View
-                    key={ct.tag.id}
-                    style={[
-                      styles.cardTagBadge,
-                      {
-                        backgroundColor: ct.tag.color + "15",
-                        borderColor: ct.tag.color + "44",
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.cardTagBadgeText, { color: ct.tag.color }]}>
-                      {ct.tag.name}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
-          <View style={styles.balanceContainer}>
-            <Text style={[styles.balanceText, { color: balanceColor }]}>
-              {formatCurrency(Math.abs(balance), currencyCode)}
-            </Text>
-            <Text style={styles.balanceLabel}>{balanceLabel}</Text>
-          </View>
-        </View>
-
-        {/* Credit limit warning bar if applicable */}
-        {hasLimit && balance > 0 && (
-          <View style={styles.limitBarWrapper}>
-            <View style={styles.limitBarHeader}>
-              <Text style={styles.limitBarText}>
-                Udhari Limit: {formatCurrency(creditLimit, currencyCode)}
-              </Text>
-              <Text
-                style={[
-                  styles.limitPercentText,
-                  limitPercentage >= 85 && { color: Colors.error },
-                ]}
-              >
-                {Math.round(limitPercentage)}% Used
-              </Text>
-            </View>
-            <View style={styles.progressBackground}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${Math.min(limitPercentage, 100)}%`,
-                    backgroundColor: limitPercentage >= 85 ? Colors.error : Colors.primary,
-                  },
-                ]}
-              />
-            </View>
-          </View>
-        )}
-      </TouchableOpacity>
-    );
-  };
-
-  const renderFooter = () => {
+  const renderFooter = useCallback(() => {
     if (!isLoading) return null;
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={Colors.primary} />
       </View>
     );
-  };
+  }, [isLoading]);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -306,6 +325,10 @@ const CustomerListScreen = ({ navigation }) => {
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.3}
         ListFooterComponent={renderFooter}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS === 'android'}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -326,6 +349,7 @@ const CustomerListScreen = ({ navigation }) => {
           ) : null
         }
       />
+
 
       {/* Floating Action Button (FAB) */}
       <TouchableOpacity

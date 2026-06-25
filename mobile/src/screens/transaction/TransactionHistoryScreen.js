@@ -16,6 +16,8 @@ import {
   Modal,
   TextInput,
   ScrollView,
+  LayoutAnimation,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useTransactionStore from "../../store/transactionStore";
@@ -26,6 +28,74 @@ import { formatCurrency, formatDate } from "../../utils/format";
 import EmptyState from "../../components/common/EmptyState";
 import { Feather } from "@expo/vector-icons";
 import { getTransactionNotes, addTransactionNote, deleteNote } from "../../services/noteService";
+
+// Memoized Transaction Card Component for list performance
+const TransactionCard = React.memo(({ item, currencyCode, onLongPress, onReverse, isActionLoading }) => {
+  const isCredit = item.type === "CREDIT";
+  const typeColor = isCredit ? Colors.error : Colors.success;
+  const typeSymbol = isCredit ? "+" : "-";
+
+  return (
+    <TouchableOpacity
+      style={styles.txnCard}
+      activeOpacity={0.95}
+      onLongPress={onLongPress}
+    >
+      <View style={styles.txnMain}>
+        <View style={styles.txnLeft}>
+          <Text style={styles.txnType}>
+            {item.type === "CREDIT" ? "Diya (Udhari)" : item.type === "PAYMENT" ? "Mila (Jama)" : item.type} {item.paymentMethod ? `(${item.paymentMethod})` : ""}
+          </Text>
+          <Text style={styles.txnDate}>{formatDate(item.transactionDate, true)}</Text>
+          {item.description && <Text style={styles.txnDesc}>{item.description}</Text>}
+          {item.referenceNumber && (
+            <Text style={styles.txnRef}>Ref: {item.referenceNumber}</Text>
+          )}
+
+          {/* Note Indicators */}
+          {item.notes && item.notes.length > 0 && (
+            <View style={styles.notesRow}>
+              {item.notes.some((n) => n.isDispute) ? (
+                <View style={[styles.noteIndicator, styles.noteIndicatorDispute]}>
+                  <Feather name="alert-triangle" size={10} color={Colors.error} style={{ marginRight: 4 }} />
+                  <Text style={[styles.noteIndicatorText, { color: Colors.error }]}>Disputed</Text>
+                </View>
+              ) : (
+                <View style={[styles.noteIndicator, styles.noteIndicatorInfo]}>
+                  <Feather name="message-square" size={10} color={Colors.primaryLight} style={{ marginRight: 4 }} />
+                  <Text style={[styles.noteIndicatorText, { color: Colors.primaryLight }]}>
+                    {item.notes.length} {item.notes.length === 1 ? "Note" : "Notes"}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+        <View style={styles.txnRight}>
+          <Text style={[styles.txnAmount, { color: typeColor }]}>
+            {typeSymbol} {formatCurrency(parseFloat(item.amount), currencyCode)}
+          </Text>
+          <Text style={styles.txnBalanceAfter}>
+            Bal: {formatCurrency(parseFloat(item.balanceAfter), currencyCode)}
+          </Text>
+        </View>
+      </View>
+
+      {/* Undo/Reverse Button */}
+      <TouchableOpacity
+        style={styles.reverseBtn}
+        onPress={onReverse}
+        disabled={isActionLoading}
+        activeOpacity={0.7}
+      >
+        <View style={styles.reverseRow}>
+          <Feather name="rotate-ccw" size={12} color={Colors.error} style={styles.reverseIcon} />
+          <Text style={styles.reverseBtnText}>Reverse Entry (Bhool-Sudhaar)</Text>
+        </View>
+      </TouchableOpacity>
+    </TouchableOpacity>
+  );
+});
 
 const TransactionHistoryScreen = ({ route, navigation }) => {
   const { customerId } = route.params;
@@ -61,7 +131,16 @@ const TransactionHistoryScreen = ({ route, navigation }) => {
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [isNotesLoading, setIsNotesLoading] = useState(false);
 
-  const handleOpenNoteThread = async (txn) => {
+  const loadData = useCallback(async (page = 1, append = false) => {
+    const params = {
+      page,
+      limit: 15,
+      ...(filterType !== "ALL" && { type: filterType }),
+    };
+    await fetchCustomerTransactions(customerId, params, append);
+  }, [customerId, filterType, fetchCustomerTransactions]);
+
+  const handleOpenNoteThread = useCallback(async (txn) => {
     setActiveTxn(txn);
     setNotesList(txn.notes || []);
     setShowNotesModal(true);
@@ -76,9 +155,9 @@ const TransactionHistoryScreen = ({ route, navigation }) => {
     } finally {
       setIsNotesLoading(false);
     }
-  };
+  }, []);
 
-  const handleAddNote = async () => {
+  const handleAddNote = useCallback(async () => {
     if (!newNoteContent.trim() || !activeTxn) return;
     setIsSavingNote(true);
     try {
@@ -87,9 +166,8 @@ const TransactionHistoryScreen = ({ route, navigation }) => {
         isDispute: false,
       });
       const newNote = response.data;
-      setNotesList([...notesList, newNote]);
+      setNotesList((prev) => [...prev, newNote]);
       setNewNoteContent("");
-      // Update transaction list in local store or reload
       loadData(meta.page, false);
     } catch (err) {
       console.warn("Failed to add note:", err);
@@ -97,9 +175,9 @@ const TransactionHistoryScreen = ({ route, navigation }) => {
     } finally {
       setIsSavingNote(false);
     }
-  };
+  }, [newNoteContent, activeTxn, meta.page, loadData]);
 
-  const handleDeleteNote = async (noteId) => {
+  const handleDeleteNote = useCallback((noteId) => {
     Alert.alert("Delete Note?", "Are you sure you want to delete this note?", [
       { text: "Cancel", style: "cancel" },
       {
@@ -108,7 +186,7 @@ const TransactionHistoryScreen = ({ route, navigation }) => {
         onPress: async () => {
           try {
             await deleteNote(noteId);
-            setNotesList(notesList.filter((n) => n.id !== noteId));
+            setNotesList((prev) => prev.filter((n) => n.id !== noteId));
             loadData(meta.page, false);
           } catch (err) {
             console.warn("Failed to delete note:", err);
@@ -117,7 +195,7 @@ const TransactionHistoryScreen = ({ route, navigation }) => {
         },
       },
     ]);
-  };
+  }, [meta.page, loadData]);
 
   // Load transactions when component mounts or filter type changes
   useEffect(() => {
@@ -125,30 +203,26 @@ const TransactionHistoryScreen = ({ route, navigation }) => {
     return () => {
       clearTransactions();
     };
-  }, [filterType]);
+  }, [filterType, loadData, clearTransactions]);
 
-  const loadData = async (page = 1, append = false) => {
-    const params = {
-      page,
-      limit: 15,
-      ...(filterType !== "ALL" && { type: filterType }),
-    };
-    await fetchCustomerTransactions(customerId, params, append);
-  };
+  // Smooth layout animation on transaction changes/loading toggle
+  useEffect(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  }, [transactions, isLoading]);
 
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await loadData(1, false);
     setIsRefreshing(false);
-  }, [filterType]);
+  }, [loadData]);
 
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
     if (!isLoading && meta.page < meta.totalPages) {
       loadData(meta.page + 1, true);
     }
-  };
+  }, [isLoading, meta, loadData]);
 
-  const handleReverseTxn = (txn) => {
+  const handleReverseTxn = useCallback((txn) => {
     if (user?.role === "restricted") {
       Alert.alert("Access Denied", "Restricted staff accounts are not allowed to reverse/delete transactions.");
       return;
@@ -166,7 +240,6 @@ const TransactionHistoryScreen = ({ route, navigation }) => {
             const success = await deleteTransaction(txn.id);
             if (success) {
               Alert.alert("Success", "Entry reversed successfully (Bhool-Sudhaar Done).");
-              // Reload current list
               loadData(1, false);
             } else {
               Alert.alert("Error", "Failed to reverse transaction.");
@@ -175,83 +248,26 @@ const TransactionHistoryScreen = ({ route, navigation }) => {
         },
       ]
     );
-  };
+  }, [user?.role, currencyCode, customer?.name, deleteTransaction, loadData]);
 
-  const renderTransactionCard = ({ item }) => {
-    const isCredit = item.type === "CREDIT";
-    const typeColor = isCredit ? Colors.error : Colors.success;
-    const typeSymbol = isCredit ? "+" : "-";
+  const renderTransactionCard = useCallback(({ item }) => (
+    <TransactionCard
+      item={item}
+      currencyCode={currencyCode}
+      onLongPress={() => handleOpenNoteThread(item)}
+      onReverse={() => handleReverseTxn(item)}
+      isActionLoading={isActionLoading}
+    />
+  ), [currencyCode, handleOpenNoteThread, handleReverseTxn, isActionLoading]);
 
-    return (
-      <TouchableOpacity
-        style={styles.txnCard}
-        activeOpacity={0.95}
-        onLongPress={() => handleOpenNoteThread(item)}
-      >
-        <View style={styles.txnMain}>
-          <View style={styles.txnLeft}>
-            <Text style={styles.txnType}>
-              {item.type === "CREDIT" ? "Diya (Udhari)" : item.type === "PAYMENT" ? "Mila (Jama)" : item.type} {item.paymentMethod ? `(${item.paymentMethod})` : ""}
-            </Text>
-            <Text style={styles.txnDate}>{formatDate(item.transactionDate, true)}</Text>
-            {item.description && <Text style={styles.txnDesc}>{item.description}</Text>}
-            {item.referenceNumber && (
-              <Text style={styles.txnRef}>Ref: {item.referenceNumber}</Text>
-            )}
-
-            {/* Note Indicators */}
-            {item.notes && item.notes.length > 0 && (
-              <View style={styles.notesRow}>
-                {item.notes.some((n) => n.isDispute) ? (
-                  <View style={[styles.noteIndicator, styles.noteIndicatorDispute]}>
-                    <Feather name="alert-triangle" size={10} color={Colors.error} style={{ marginRight: 4 }} />
-                    <Text style={[styles.noteIndicatorText, { color: Colors.error }]}>Disputed</Text>
-                  </View>
-                ) : (
-                  <View style={[styles.noteIndicator, styles.noteIndicatorInfo]}>
-                    <Feather name="message-square" size={10} color={Colors.primaryLight} style={{ marginRight: 4 }} />
-                    <Text style={[styles.noteIndicatorText, { color: Colors.primaryLight }]}>
-                      {item.notes.length} {item.notes.length === 1 ? "Note" : "Notes"}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            )}
-          </View>
-          <View style={styles.txnRight}>
-            <Text style={[styles.txnAmount, { color: typeColor }]}>
-              {typeSymbol} {formatCurrency(parseFloat(item.amount), currencyCode)}
-            </Text>
-            <Text style={styles.txnBalanceAfter}>
-              Bal: {formatCurrency(parseFloat(item.balanceAfter), currencyCode)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Undo/Reverse Button */}
-        <TouchableOpacity
-          style={styles.reverseBtn}
-          onPress={() => handleReverseTxn(item)}
-          disabled={isActionLoading}
-          activeOpacity={0.7}
-        >
-          <View style={styles.reverseRow}>
-            <Feather name="rotate-ccw" size={12} color={Colors.error} style={styles.reverseIcon} />
-            <Text style={styles.reverseBtnText}>Reverse Entry (Bhool-Sudhaar)</Text>
-          </View>
-        </TouchableOpacity>
-      </TouchableOpacity>
-    );
-  };
-
-  const renderFooter = () => {
+  const renderFooter = useCallback(() => {
     if (!isLoading) return null;
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={Colors.primary} />
       </View>
     );
-  };
+  }, [isLoading]);
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
@@ -299,6 +315,10 @@ const TransactionHistoryScreen = ({ route, navigation }) => {
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.3}
         ListFooterComponent={renderFooter}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS === 'android'}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -317,6 +337,7 @@ const TransactionHistoryScreen = ({ route, navigation }) => {
           ) : null
         }
       />
+
 
       {/* Transaction Notes Modal */}
       <Modal visible={showNotesModal} animationType="slide" transparent={true}>

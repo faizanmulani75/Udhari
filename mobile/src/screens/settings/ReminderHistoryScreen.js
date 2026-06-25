@@ -11,6 +11,8 @@ import {
   RefreshControl,
   TouchableOpacity,
   StatusBar,
+  LayoutAnimation,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -19,6 +21,44 @@ import Colors from "../../constants/colors";
 import { formatCurrency, formatDate } from "../../utils/format";
 import useAuthStore from "../../store/authStore";
 import EmptyState from "../../components/common/EmptyState";
+
+// Memoized Reminder Card Component for list performance
+const ReminderCard = React.memo(({ item, currencyCode }) => {
+  const isSent = item.status === "SENT";
+  const statusColor = isSent ? Colors.success : Colors.error;
+  const amount = parseFloat(item.amountDue || 0);
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <View style={styles.leftInfo}>
+          <Text style={styles.customerName}>{item.customer?.name || "Unknown Customer"}</Text>
+          <Text style={styles.phoneText}>📱 {item.customer?.phone || "N/A"}</Text>
+        </View>
+        <View style={styles.rightInfo}>
+          <Text style={styles.amountText}>{formatCurrency(amount, currencyCode)}</Text>
+          <Text style={styles.amountLabel}>Outstanding Due</Text>
+        </View>
+      </View>
+
+      <View style={styles.cardFooter}>
+        <View style={styles.channelBadge}>
+          <Feather name="mail" size={11} color={Colors.textSecondary} style={{ marginRight: 4 }} />
+          <Text style={styles.channelText}>{item.channel}</Text>
+        </View>
+
+        <View style={styles.statusRow}>
+          <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+          <Text style={[styles.statusText, { color: statusColor }]}>
+            {item.status}
+          </Text>
+        </View>
+      </View>
+
+      <Text style={styles.dateText}>{formatDate(item.createdAt, true)}</Text>
+    </View>
+  );
+});
 
 const ReminderHistoryScreen = ({ navigation }) => {
   const { shop } = useAuthStore();
@@ -29,11 +69,7 @@ const ReminderHistoryScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadData(1, false);
-  }, []);
-
-  const loadData = async (page = 1, append = false) => {
+  const loadData = useCallback(async (page = 1, append = false) => {
     if (page === 1) setIsLoading(true);
     try {
       const response = await getReminderHistory({ page, limit: 15 });
@@ -47,65 +83,41 @@ const ReminderHistoryScreen = ({ navigation }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadData(1, false);
+  }, [loadData]);
+
+  // Trigger LayoutAnimation smoothly when reminder list changes
+  useEffect(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  }, [reminders, isLoading]);
 
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await loadData(1, false);
     setIsRefreshing(false);
-  }, []);
+  }, [loadData]);
 
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
     if (!isLoading && meta.page < meta.totalPages) {
       loadData(meta.page + 1, true);
     }
-  };
+  }, [isLoading, meta, loadData]);
 
-  const renderReminderCard = ({ item }) => {
-    const isSent = item.status === "SENT";
-    const statusColor = isSent ? Colors.success : Colors.error;
-    const amount = parseFloat(item.amountDue || 0);
+  const renderReminderCard = useCallback(({ item }) => (
+    <ReminderCard item={item} currencyCode={currencyCode} />
+  ), [currencyCode]);
 
-    return (
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={styles.leftInfo}>
-            <Text style={styles.customerName}>{item.customer?.name || "Unknown Customer"}</Text>
-            <Text style={styles.phoneText}>📱 {item.customer?.phone || "N/A"}</Text>
-          </View>
-          <View style={styles.rightInfo}>
-            <Text style={styles.amountText}>{formatCurrency(amount, currencyCode)}</Text>
-            <Text style={styles.amountLabel}>Outstanding Due</Text>
-          </View>
-        </View>
-
-        <View style={styles.cardFooter}>
-          <View style={styles.channelBadge}>
-            <Feather name="mail" size={11} color={Colors.textSecondary} style={{ marginRight: 4 }} />
-            <Text style={styles.channelText}>{item.channel}</Text>
-          </View>
-
-          <View style={styles.statusRow}>
-            <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-            <Text style={[styles.statusText, { color: statusColor }]}>
-              {item.status}
-            </Text>
-          </View>
-        </View>
-
-        <Text style={styles.dateText}>{formatDate(item.createdAt, true)}</Text>
-      </View>
-    );
-  };
-
-  const renderFooter = () => {
+  const renderFooter = useCallback(() => {
     if (!isLoading) return null;
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={Colors.primary} />
       </View>
     );
-  };
+  }, [isLoading]);
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
@@ -129,6 +141,10 @@ const ReminderHistoryScreen = ({ navigation }) => {
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.3}
         ListFooterComponent={renderFooter}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS === 'android'}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}

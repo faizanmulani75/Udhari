@@ -55,6 +55,81 @@ const localFallbackParse = (text) => {
   return { amount, description };
 };
 
+const callGeminiWithFallback = async (promptText) => {
+  const keys = [];
+  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== "" && process.env.GEMINI_API_KEY !== "your_gemini_api_key_here") {
+    keys.push(process.env.GEMINI_API_KEY.trim());
+  }
+  if (process.env.GEMINI_API_KEY_2 && process.env.GEMINI_API_KEY_2.trim() !== "" && process.env.GEMINI_API_KEY_2 !== "your_gemini_api_key_here") {
+    keys.push(process.env.GEMINI_API_KEY_2.trim());
+  }
+
+  if (keys.length === 0) {
+    return null;
+  }
+
+  const models = ["gemini-3.5-flash", "gemini-1.5-flash"];
+  let lastError = null;
+
+  for (const model of models) {
+    for (let i = 0; i < keys.length; i++) {
+      const apiKey = keys[i];
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    {
+                      text: promptText
+                    }
+                  ]
+                }
+              ]
+            })
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.warn(`Gemini API key index ${i} failed for model ${model} (status ${response.status}): ${errorText}. Trying next option.`);
+          lastError = new Error(`Gemini API responded with status ${response.status}: ${errorText}`);
+          continue;
+        }
+
+        const json = await response.json();
+        const outputText = json.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (!outputText) {
+          console.warn(`Invalid response structure from Gemini API key index ${i} for model ${model}. Trying next option.`);
+          lastError = new Error("Invalid response structure from Gemini API");
+          continue;
+        }
+
+        // Clean output in case it wrapped JSON in markdown blocks (e.g. ```json ... ```)
+        let cleanText = outputText.trim();
+        if (cleanText.startsWith("```")) {
+          cleanText = cleanText.replace(/^```(?:json)?\n?|```$/g, "").trim();
+        }
+
+        return JSON.parse(cleanText);
+      } catch (err) {
+        console.warn(`Error using Gemini API key index ${i} for model ${model}: ${err.message}. Trying next option.`);
+        lastError = err;
+      }
+    }
+  }
+
+  // If all keys and models failed, throw the last error
+  throw lastError || new Error("No configured Gemini API keys or models succeeded");
+};
+
 exports.parseTransaction = async (req, res, next) => {
   try {
     const { text } = req.body;
@@ -65,33 +140,7 @@ exports.parseTransaction = async (req, res, next) => {
       });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    const isApiKeyConfigured = apiKey && apiKey !== "your_gemini_api_key_here" && apiKey.trim() !== "";
-
-    if (!isApiKeyConfigured) {
-      // Use local fallback parser when API key is missing or is the default placeholder
-      const result = localFallbackParse(text);
-      return res.json({
-        success: true,
-        source: "local-fallback",
-        data: result,
-      });
-    }
-
-    // Call Google Gemini API
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `You are an AI assistant for a shopkeeper khata bookkeeping app.
+    const prompt = `You are an AI assistant for a shopkeeper khata bookkeeping app.
 Parse the following shop entry text (which may be in English, Hindi, Hinglish, or mixed) and extract the items/description and evaluate the total numerical amount.
 Output your response ONLY as a valid JSON object matching this schema:
 {
@@ -99,34 +148,26 @@ Output your response ONLY as a valid JSON object matching this schema:
   "description": "string (cleaned concise comma-separated list of items/reasons, excluding the price details)"
 }
 
-Input text: "${text}"`
-                }
-              ]
-            }
-          ]
-        })
-      }
-    );
+Input text: "${text}"`;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API responded with status ${response.status}: ${errorText}`);
+    let parsedData = null;
+    let fallbackSource = "local-fallback";
+    try {
+      parsedData = await callGeminiWithFallback(prompt);
+    } catch (err) {
+      console.error("AI parse transaction failed using all keys:", err);
+      fallbackSource = "local-fallback-error";
     }
 
-    const json = await response.json();
-    const outputText = json.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (!outputText) {
-      throw new Error("Invalid response structure from Gemini API");
+    if (!parsedData) {
+      // Use local fallback parser when API key is missing or all configured keys failed
+      const result = localFallbackParse(text);
+      return res.json({
+        success: true,
+        source: fallbackSource,
+        data: result,
+      });
     }
-
-    // Clean output in case it wrapped JSON in markdown blocks (e.g. ```json ... ```)
-    let cleanText = outputText.trim();
-    if (cleanText.startsWith("```")) {
-      cleanText = cleanText.replace(/^```(?:json)?\n?|```$/g, "").trim();
-    }
-
-    const parsedData = JSON.parse(cleanText);
 
     return res.json({
       success: true,
@@ -138,7 +179,7 @@ Input text: "${text}"`
     });
 
   } catch (err) {
-    console.error("AI parse transaction failed:", err);
+    console.error("AI parse transaction failed completely:", err);
     // Fall back to local parsing on any failure to keep app working
     const fallbackResult = localFallbackParse(req.body.text || "");
     return res.json({
@@ -162,26 +203,8 @@ exports.voiceEntry = async (req, res, next) => {
       });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    const isApiKeyConfigured = apiKey && apiKey !== "your_gemini_api_key_here" && apiKey.trim() !== "";
-    
     let parsedData = null;
-
-    if (isApiKeyConfigured) {
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    {
-                      text: `You are an AI assistant for a shopkeeper khata bookkeeping app.
+    const prompt = `You are an AI assistant for a shopkeeper khata bookkeeping app.
 Parse the following voice entry text (which may be mixed English, Hindi, or Hinglish) and extract:
 1. The customer name (the person involved).
 2. A cleaned concise description of the items/reason.
@@ -196,39 +219,28 @@ Output your response ONLY as a valid JSON object matching this schema:
   "type": "CREDIT" | "PAYMENT"
 }
 
-Input text: "${text}"`
-                    }
-                  ]
-                }
-              ]
-            })
-          }
-        );
+Input text: "${text}"`;
 
-        if (response.ok) {
-          const json = await response.json();
-          const outputText = json.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (outputText) {
-            let cleanText = outputText.trim();
-            if (cleanText.startsWith("```")) {
-              cleanText = cleanText.replace(/^```(?:json)?\n?|```$/g, "").trim();
-            }
-            const data = JSON.parse(cleanText);
-            parsedData = {
-              customerName: data.customerName || null,
-              amount: Number(data.amount) || 0,
-              description: data.description || "",
-              type: data.type === "PAYMENT" ? "PAYMENT" : "CREDIT"
-            };
-          }
-        }
-      } catch (err) {
-        console.error("Gemini voiceEntry API call failed, falling back to local parsing:", err);
+    console.log(`[VoiceEntry] Received text: "${text}"`);
+
+    try {
+      const data = await callGeminiWithFallback(prompt);
+      if (data) {
+        parsedData = {
+          customerName: data.customerName || null,
+          amount: Number(data.amount) || 0,
+          description: data.description || "",
+          type: data.type === "PAYMENT" ? "PAYMENT" : "CREDIT"
+        };
+        console.log(`[VoiceEntry] Gemini parser succeeded:`, parsedData);
       }
+    } catch (err) {
+      console.error("[VoiceEntry] Gemini parser failed, falling back to local parsing:", err.message);
     }
 
     // Smart Local Fallback
     if (!parsedData) {
+      console.log(`[VoiceEntry] Running smart local parser fallback for: "${text}"`);
       const fallbackResult = localFallbackParse(text);
       const textLower = text.toLowerCase();
       
@@ -270,16 +282,44 @@ Input text: "${text}"`
         }
       }
 
+      // 3. Heuristic fallback: Extract first reasonable capitalized/non-stopword if no customer matches
+      if (!matchedName) {
+        const priceRegex = /(?:rs\.?\s*|₹\s*|rupees\s*)?(\d+(?:\.\d{1,2})?)(?:\s*(?:rs\.?|rupees|r|₹))?/gi;
+        const words = text
+          .replace(priceRegex, "")
+          .replace(/\b(?:rs\.?|rupees|r|₹|amount|rupe|rupiya|rupiye|cash|online|gpay|paytm|phonepe)\b/gi, "")
+          .replace(/\b(?:gave|give|paid|pay|deya|diya|diye|diyo|dinha|din|sent|lent|borrowed|added|add|credit|udhar|udhari)\b/gi, "")
+          .replace(/\b(?:received|recieved|recv|mila|jama|aaya|aaye|payment|settle|back|return|returned|returning)\b/gi, "")
+          .replace(/\b(?:to|from|for|of|ko|se|ne|ka|ki|ke|on|at|in|with)\b/gi, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .split(/\s+/);
+        
+        const stopWords = new Set(["and", "the", "for", "milk", "tea", "biscuit", "biscuits", "groceries", "grocery", "sugar", "chawal", "rice", "wheat", "atta", "oil", "shop", "khata", "book", "entry", "voice", "water", "rent", "bill"]);
+        for (const word of words) {
+          const cleanWord = word.replace(/[^a-zA-Z]/g, "");
+          if (cleanWord.length >= 3 && !stopWords.has(cleanWord.toLowerCase())) {
+            matchedName = cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1).toLowerCase();
+            break;
+          }
+        }
+        if (matchedName) {
+          console.log(`[VoiceEntry] Heuristic name extraction found name candidate: "${matchedName}"`);
+        }
+      }
+
       parsedData = {
         customerName: matchedName,
         amount: fallbackResult.amount,
         description: fallbackResult.description,
         type: isPayment ? "PAYMENT" : "CREDIT"
       };
+      console.log(`[VoiceEntry] Local parser fallback completed:`, parsedData);
     }
 
     const searchName = parsedData.customerName ? parsedData.customerName.trim() : "";
     if (!searchName) {
+      console.warn(`[VoiceEntry] Failed to parse customer name from voice text: "${text}"`);
       return res.status(400).json({
         success: false,
         message: "Customer name could not be parsed from voice entry."
