@@ -56,6 +56,7 @@ const exportRoutes = require("./routes/exportRoutes");
 const reminderRoutes = require("./routes/reminderRoutes");
 const tagRoutes = require("./routes/tagRoutes");
 const noteRoutes = require("./routes/noteRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 const sanitizeInput = require("./middleware/sanitizeInput");
 
 const app = express();
@@ -116,6 +117,9 @@ app.use("/api/v1/tags", authMiddleware, shopContext, tagRoutes);
 
 // Transaction notes (protected, shop-scoped)
 app.use("/api/v1/notes", authMiddleware, shopContext, noteRoutes);
+
+// In-app notifications (protected, shop-scoped)
+app.use("/api/v1/notifications", authMiddleware, shopContext, notificationRoutes);
 
 // Dashboard reports (protected, shop-scoped)
 app.use("/api/v1/dashboard", authMiddleware, shopContext, dashboardRoutes);

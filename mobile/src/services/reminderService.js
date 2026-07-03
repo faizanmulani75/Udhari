@@ -1,7 +1,7 @@
 // src/services/reminderService.js
 // API calls for payment reminder logs and bulk triggering.
 
-import api from "./api";
+import api from "./apiClient";
 
 /**
  * Trigger bulk SMS payment reminders to all debtors.

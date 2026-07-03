@@ -9,6 +9,7 @@ const ApiError = require("../utils/ApiError");
 const catchAsync = require("../utils/catchAsync");
 const prisma = require("../config/prisma");
 const { logActivity } = require("../utils/auditLogger");
+const { notifyOwner } = require("../services/notificationService");
 const PDFDocument = require("pdfkit");
 
 // ─── Validation Helpers ──────────────────────────────────
@@ -85,6 +86,16 @@ const addCredit = catchAsync(async (req, res) => {
     `Recorded credit of ₹${amount} for customer ${customerName}`
   );
 
+  // Notify owner if action was performed by a staff member
+  if (req.userRole && req.userRole !== "owner") {
+    notifyOwner(
+      req.shopId,
+      "💳 Credit Entry Added",
+      `Staff member recorded a credit of ₹${amount} for ${customerName}.`,
+      "TRANSACTION"
+    ).catch(() => {});
+  }
+
   return ApiResponse.created(res, "Udhari recorded successfully", {
     transaction: result.transaction,
     previousBalance: result.previousBalance,
@@ -136,6 +147,16 @@ const addPayment = catchAsync(async (req, res) => {
     `Recorded payment of ₹${amount} from customer ${customerName}`
   );
 
+  // Notify owner if action was performed by a staff member
+  if (req.userRole && req.userRole !== "owner") {
+    notifyOwner(
+      req.shopId,
+      "💰 Payment Recorded",
+      `Staff member recorded a payment of ₹${amount} from ${customerName}.`,
+      "TRANSACTION"
+    ).catch(() => {});
+  }
+
   return ApiResponse.created(res, "Payment recorded successfully", {
     transaction: result.transaction,
     previousBalance: result.previousBalance,
@@ -177,6 +198,16 @@ const addDebit = catchAsync(async (req, res) => {
     "CREATE_TRANSACTION",
     `Recorded debit adjustment of ₹${amount} for customer ${customerName}`
   );
+
+  // Notify owner if action was performed by a staff member
+  if (req.userRole && req.userRole !== "owner") {
+    notifyOwner(
+      req.shopId,
+      "🔻 Debit Adjustment",
+      `Staff member recorded a debit adjustment of ₹${amount} for ${customerName}.`,
+      "TRANSACTION"
+    ).catch(() => {});
+  }
 
   return ApiResponse.created(res, "Debit adjustment recorded successfully", {
     transaction: result.transaction,
@@ -280,6 +311,16 @@ const deleteTransaction = catchAsync(async (req, res) => {
     "REVERSE_TRANSACTION",
     `Reversed transaction of type ${type} worth ₹${amount} for customer ${customerName}`
   );
+
+  // Notify owner if action was performed by a staff member
+  if (req.userRole && req.userRole !== "owner") {
+    notifyOwner(
+      req.shopId,
+      "⚠️ Transaction Reversed",
+      `Staff member reversed a ${type} of ₹${amount} for ${customerName}.`,
+      "TRANSACTION"
+    ).catch(() => {});
+  }
 
   return ApiResponse.success(res, "Transaction reversed successfully", {
     deletedTransaction: result.deletedTransaction,

@@ -1,7 +1,7 @@
 // src/services/subscriptionService.js
 // API client for SaaS subscription plans.
 
-import api from "./api";
+import api from "./apiClient";
 
 /**
  * Fetch the active subscription details.

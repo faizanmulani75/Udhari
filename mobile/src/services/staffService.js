@@ -1,7 +1,7 @@
 // src/services/staffService.js
 // API client for staff accounts management.
 
-import api from "./api";
+import api from "./apiClient";
 
 /**
  * Fetch list of all active staff users.
@@ -40,5 +40,15 @@ export const deleteStaff = async (staffId) => {
  */
 export const updateStaff = async (staffId, updateData) => {
   const response = await api.put(`/staff/${staffId}`, updateData);
+  return response.data;
+};
+
+/**
+ * Regenerate invite code for a staff member.
+ * @param {string} staffId
+ * @returns {Promise<object>}
+ */
+export const regenerateInviteCode = async (staffId) => {
+  const response = await api.post(`/staff/${staffId}/regenerate-code`);
   return response.data;
 };

@@ -62,6 +62,24 @@ const login = catchAsync(async (req, res) => {
   return ApiResponse.success(res, "Login successful", result);
 });
 
+/**
+ * Verify a staff member's invite code.
+ */
+const verifyStaffInvite = catchAsync(async (req, res) => {
+  const { inviteCode } = req.body;
+  const result = await authService.verifyStaffInvite(inviteCode);
+  return ApiResponse.success(res, "Invite code verified successfully", result);
+});
+
+/**
+ * Activate a staff account with a password.
+ */
+const activateStaffAccount = catchAsync(async (req, res) => {
+  const { inviteCode, password } = req.body;
+  const result = await authService.activateStaffAccount(inviteCode, password);
+  return ApiResponse.success(res, "Staff account activated successfully", result);
+});
+
 module.exports = {
   sendOtp,
   verifyOtp,
@@ -69,4 +87,6 @@ module.exports = {
   register,
   registerVerify,
   login,
+  verifyStaffInvite,
+  activateStaffAccount,
 };

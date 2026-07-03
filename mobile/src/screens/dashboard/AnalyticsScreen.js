@@ -1,7 +1,8 @@
 // src/screens/dashboard/AnalyticsScreen.js
-// Visual analytics dashboard displaying transaction trends, cash flow breakdowns, and charts.
+// Hisaab Analytics — premium redesign with summary cards, collection rate,
+// top customers, highest pending, and daily trend chart.
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,6 +12,7 @@ import {
   ActivityIndicator,
   Alert,
   StatusBar,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -18,6 +20,9 @@ import Colors from "../../constants/colors";
 import { formatCurrency } from "../../utils/format";
 import { getAnalyticsData } from "../../services/dashboardService";
 import useAuthStore from "../../store/authStore";
+
+const { width } = Dimensions.get("window");
+const CHART_HEIGHT = 130;
 
 const AnalyticsScreen = ({ navigation }) => {
   const { shop } = useAuthStore();
@@ -36,7 +41,7 @@ const AnalyticsScreen = ({ navigation }) => {
       }
     } catch (err) {
       console.warn("Failed to load analytics:", err);
-      Alert.alert("Error", "Could not load analytics trends. Please try again.");
+      Alert.alert("Error", "Could not load analytics. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -46,85 +51,92 @@ const AnalyticsScreen = ({ navigation }) => {
     fetchAnalytics(days);
   }, [days]);
 
-  const handlePeriodChange = (val) => {
-    setDays(val);
-  };
+  // ── Derived values ──────────────────────────────────────
+  const totalSales    = parseFloat(analytics?.totalCredit   || 0);
+  const collected     = parseFloat(analytics?.totalPayments || 0);
+  const outstanding   = Math.max(0, totalSales - collected);
+  const customersAdded = analytics?.customersAdded || 0;
+  const topDebtors    = analytics?.topDebtors || [];
+  const dailyTrends   = analytics?.dailyTrends || [];
 
-  // Custom SVG Bar Chart Renderer
-  const renderSvgBarChart = () => {
-    if (!analytics || !analytics.dailyTrends || analytics.dailyTrends.length === 0) {
-      return null;
-    }
+  const collectionRate = totalSales > 0 ? Math.round((collected / totalSales) * 100) : 0;
+  const pendingRate    = 100 - collectionRate;
 
-    const trends = analytics.dailyTrends;
+  // ── Bar Chart ────────────────────────────────────────────
+  const renderBarChart = () => {
+    if (!dailyTrends.length) return null;
+
     const maxVal = Math.max(
-      ...trends.map((t) => Math.max(parseFloat(t.credit || 0), parseFloat(t.payment || 0), 100))
+      ...dailyTrends.map((t) => Math.max(parseFloat(t.credit || 0), parseFloat(t.payment || 0), 1))
     );
 
-    const chartHeight = 160;
-    const paddingBottom = 20;
-
     return (
-      <View style={styles.chartWrapper}>
-        <View style={styles.chartYAxis}>
-          <Text style={styles.yAxisLabel}>{formatCurrency(maxVal, currencyCode)}</Text>
-          <Text style={styles.yAxisLabel}>{formatCurrency(maxVal / 2, currencyCode)}</Text>
-          <Text style={styles.yAxisLabel}>{formatCurrency(0, currencyCode)}</Text>
-        </View>
+      <View style={styles.chartOuter}>
+        <View style={styles.chartBarsRow}>
+          {dailyTrends.map((day, idx) => {
+            const creditH = Math.max(4, (parseFloat(day.credit || 0) / maxVal) * CHART_HEIGHT);
+            const paymentH = Math.max(4, (parseFloat(day.payment || 0) / maxVal) * CHART_HEIGHT);
+            const dateObj = new Date(day.date);
+            const label = dateObj.toLocaleDateString("en-IN", { weekday: "narrow" });
 
-        <View style={styles.chartContainer}>
-          <View style={styles.chartBarsRow}>
-            {trends.map((day, idx) => {
-              const creditHeight = ((parseFloat(day.credit || 0)) / maxVal) * (chartHeight - paddingBottom);
-              const paymentHeight = ((parseFloat(day.payment || 0)) / maxVal) * (chartHeight - paddingBottom);
-
-              // Get day name or formatted date
-              const dateObj = new Date(day.date);
-              const label = dateObj.toLocaleDateString(undefined, { weekday: "narrow" }) || "";
-
-              return (
-                <View key={idx} style={styles.chartColumn}>
-                  <View style={styles.barsContainer}>
-                    <View
-                      style={[
-                        styles.bar,
-                        {
-                          height: Math.max(3, creditHeight),
-                          backgroundColor: Colors.error,
-                        },
-                      ]}
-                    />
-                    <View
-                      style={[
-                        styles.bar,
-                        {
-                          height: Math.max(3, paymentHeight),
-                          backgroundColor: Colors.success,
-                        },
-                      ]}
-                    />
-                  </View>
-                  <Text style={styles.chartLabel} numberOfLines={1}>
-                    {label}
-                  </Text>
+            return (
+              <View key={idx} style={styles.chartCol}>
+                <View style={styles.barsGroup}>
+                  <View style={[styles.bar, { height: creditH, backgroundColor: Colors.error }]} />
+                  <View style={[styles.bar, { height: paymentH, backgroundColor: Colors.primary }]} />
                 </View>
-              );
-            })}
-          </View>
+                <Text style={styles.barLabel}>{label}</Text>
+              </View>
+            );
+          })}
         </View>
+        {/* Baseline */}
+        <View style={styles.chartBaseline} />
       </View>
     );
   };
 
-  const creditTotal = analytics?.totalCredit || 0;
-  const paymentTotal = analytics?.totalPayments || 0;
-  const flowDifference = creditTotal - paymentTotal;
+  // ── Collection Rate Meter ────────────────────────────────
+  const renderCollectionRate = () => (
+    <View style={styles.rateRow}>
+      {/* Collected */}
+      <View style={styles.rateBlock}>
+        <View style={[styles.rateCircle, styles.collectedCircle]}>
+          <Text style={styles.ratePercent}>{collectionRate}%</Text>
+        </View>
+        <Text style={styles.rateLabel}>Collected</Text>
+      </View>
+
+      {/* Divider */}
+      <View style={styles.rateDivider} />
+
+      {/* Pending */}
+      <View style={styles.rateBlock}>
+        <View style={[styles.rateCircle, styles.pendingCircle]}>
+          <Text style={[styles.ratePercent, { color: Colors.error }]}>{pendingRate}%</Text>
+        </View>
+        <Text style={styles.rateLabel}>Pending</Text>
+      </View>
+
+      {/* Bar */}
+      <View style={styles.rateBarWrapper}>
+        <Text style={styles.rateBarLabel}>Collection Progress</Text>
+        <View style={styles.rateBarBg}>
+          <View style={[styles.rateBarFill, { width: `${collectionRate}%` }]} />
+        </View>
+        <View style={styles.rateBarFooter}>
+          <Text style={styles.rateBarSubL}>{formatCurrency(collected, currencyCode)} collected</Text>
+          <Text style={styles.rateBarSubR}>{formatCurrency(outstanding, currencyCode)} left</Text>
+        </View>
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
 
-      {/* Header */}
+      {/* ── Header ── */}
       <View style={styles.headerBar}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Feather name="chevron-left" size={24} color={Colors.textPrimary} />
@@ -133,26 +145,23 @@ const AnalyticsScreen = ({ navigation }) => {
         <View style={styles.placeholder} />
       </View>
 
-      {/* Time window toggle */}
+      {/* ── Period Selector ── */}
       <View style={styles.periodSelector}>
-        <TouchableOpacity
-          style={[styles.periodTab, days === 7 && styles.periodTabActive]}
-          onPress={() => handlePeriodChange(7)}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.periodTabText, days === 7 && styles.periodTabTextActive]}>
-            Last 7 Days
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.periodTab, days === 30 && styles.periodTabActive]}
-          onPress={() => handlePeriodChange(30)}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.periodTabText, days === 30 && styles.periodTabTextActive]}>
-            Last 30 Days
-          </Text>
-        </TouchableOpacity>
+        {[
+          { label: "Last 7 Days", val: 7 },
+          { label: "Last 30 Days", val: 30 },
+        ].map(({ label, val }) => (
+          <TouchableOpacity
+            key={val}
+            style={[styles.periodTab, days === val && styles.periodTabActive]}
+            onPress={() => setDays(val)}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.periodTabText, days === val && styles.periodTabTextActive]}>
+              {label}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {isLoading ? (
@@ -161,71 +170,125 @@ const AnalyticsScreen = ({ navigation }) => {
           <Text style={styles.loaderText}>Aggregating ledger data...</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {/* Credit vs Payments Summary cards */}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* ══════════════════════════════════════════
+              SECTION 1 — Weekly Summary
+          ══════════════════════════════════════════ */}
+          <Text style={styles.sectionHeading}>
+            {days === 7 ? "Weekly" : "Monthly"} Summary
+          </Text>
           <View style={styles.summaryGrid}>
-            <View style={[styles.summaryCard, styles.creditCard]}>
-              <View style={styles.cardHeader}>
-                <Feather name="arrow-up-right" size={14} color={Colors.error} />
-                <Text style={styles.cardLabel}>Diya (Udhari Given)</Text>
+            {/* Total Sales */}
+            <View style={[styles.summaryCard, styles.summaryCardWide]}>
+              <View style={styles.summaryIconWrap}>
+                <Feather name="trending-up" size={14} color={Colors.primary} />
               </View>
-              <Text style={[styles.cardValue, { color: Colors.error }]}>
-                {formatCurrency(creditTotal, currencyCode)}
+              <Text style={styles.summaryCardLabel}>Total Sales</Text>
+              <Text style={[styles.summaryCardValue, { color: Colors.primary }]}>
+                {formatCurrency(totalSales, currencyCode)}
               </Text>
             </View>
 
-            <View style={[styles.summaryCard, styles.paymentCard]}>
-              <View style={styles.cardHeader}>
-                <Feather name="arrow-down-left" size={14} color={Colors.success} />
-                <Text style={styles.cardLabel}>Mila (Collections)</Text>
+            {/* Collections */}
+            <View style={[styles.summaryCard, styles.summaryCardWide]}>
+              <View style={[styles.summaryIconWrap, { backgroundColor: "rgba(5,213,154,0.08)" }]}>
+                <Feather name="arrow-down-circle" size={14} color={Colors.success} />
               </View>
-              <Text style={[styles.cardValue, { color: Colors.success }]}>
-                {formatCurrency(paymentTotal, currencyCode)}
+              <Text style={styles.summaryCardLabel}>Collections</Text>
+              <Text style={[styles.summaryCardValue, { color: Colors.success }]}>
+                {formatCurrency(collected, currencyCode)}
+              </Text>
+            </View>
+
+            {/* Outstanding */}
+            <View style={[styles.summaryCard, styles.summaryCardWide]}>
+              <View style={[styles.summaryIconWrap, { backgroundColor: "rgba(255,74,90,0.08)" }]}>
+                <Feather name="clock" size={14} color={Colors.error} />
+              </View>
+              <Text style={styles.summaryCardLabel}>Outstanding</Text>
+              <Text style={[styles.summaryCardValue, { color: Colors.error }]}>
+                {formatCurrency(outstanding, currencyCode)}
+              </Text>
+            </View>
+
+            {/* Customers Added */}
+            <View style={[styles.summaryCard, styles.summaryCardWide]}>
+              <View style={[styles.summaryIconWrap, { backgroundColor: "rgba(255,142,37,0.08)" }]}>
+                <Feather name="user-plus" size={14} color={Colors.accent} />
+              </View>
+              <Text style={styles.summaryCardLabel}>Customers Added</Text>
+              <Text style={[styles.summaryCardValue, { color: Colors.accent }]}>
+                {customersAdded}
               </Text>
             </View>
           </View>
 
-          {/* Cash Flow Health Status */}
-          <View style={styles.healthCard}>
-            <View style={styles.healthHeader}>
-              <Text style={styles.healthTitle}>Cash Flow Balance</Text>
-              <View
-                style={[
-                  styles.healthIndicator,
-                  { backgroundColor: flowDifference >= 0 ? Colors.errorBg : Colors.successBg },
-                ]}
-              >
-                <Text style={{ color: flowDifference >= 0 ? Colors.error : Colors.success, fontSize: 10, fontWeight: "800" }}>
-                  {flowDifference >= 0 ? "EXPANSION" : "RESERVE"}
-                </Text>
-              </View>
-            </View>
-            <Text style={[styles.healthValue, { color: flowDifference >= 0 ? Colors.error : Colors.success }]}>
-              {flowDifference >= 0 ? "+" : ""}
-              {formatCurrency(flowDifference, currencyCode)}
-            </Text>
-            <Text style={styles.healthSubText}>
-              {flowDifference >= 0
-                ? "You gave more credit than you collected this period. Follow up on pending payments."
-                : "Excellent collections! Your outstanding credit has decreased relative to advance repayments."}
-            </Text>
-          </View>
-
-          {/* Chart Section */}
+          {/* ══════════════════════════════════════════
+              SECTION 2 — Daily Trend Chart
+          ══════════════════════════════════════════ */}
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Daily Ledger Trends</Text>
-            <View style={styles.legendRow}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendIndicator, { backgroundColor: Colors.error }]} />
-                <Text style={styles.legendText}>Diya (Credit)</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendIndicator, { backgroundColor: Colors.success }]} />
-                <Text style={styles.legendText}>Mila (Payment)</Text>
+            <View style={styles.sectionTitleRow}>
+              <Text style={styles.sectionTitle}>Daily Ledger Trends</Text>
+              <View style={styles.legendRow}>
+                <View style={styles.legendDot}>
+                  <View style={[styles.dot, { backgroundColor: Colors.error }]} />
+                  <Text style={styles.legendText}>Sales</Text>
+                </View>
+                <View style={styles.legendDot}>
+                  <View style={[styles.dot, { backgroundColor: Colors.primary }]} />
+                  <Text style={styles.legendText}>Collected</Text>
+                </View>
               </View>
             </View>
-            {renderSvgBarChart()}
+            {renderBarChart()}
+            {dailyTrends.length === 0 && (
+              <Text style={styles.emptyNote}>No transactions in this period.</Text>
+            )}
           </View>
+
+          {/* ══════════════════════════════════════════
+              SECTION 3 — Top Customers (highest pending)
+          ══════════════════════════════════════════ */}
+          {topDebtors.length > 0 && (
+            <View style={styles.sectionCard}>
+              <Text style={styles.sectionTitle}>Highest Pending</Text>
+              {topDebtors.map((customer, idx) => {
+                const bal = parseFloat(customer.balance || 0);
+                const share = totalSales > 0 ? Math.min(100, (bal / totalSales) * 100) : 0;
+                return (
+                  <View key={customer.id} style={styles.debtorRow}>
+                    <View style={styles.debtorRank}>
+                      <Text style={styles.debtorRankText}>#{idx + 1}</Text>
+                    </View>
+                    <View style={styles.debtorInfo}>
+                      <View style={styles.debtorTop}>
+                        <Text style={styles.debtorName} numberOfLines={1}>{customer.name}</Text>
+                        <Text style={[styles.debtorBalance, { color: Colors.error }]}>
+                          {formatCurrency(bal, currencyCode)}
+                        </Text>
+                      </View>
+                      <View style={styles.debtorBarBg}>
+                        <View style={[styles.debtorBarFill, { width: `${share}%` }]} />
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          {/* ══════════════════════════════════════════
+              SECTION 4 — Collection Rate
+          ══════════════════════════════════════════ */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Collection Rate</Text>
+            {renderCollectionRate()}
+          </View>
+
+          <View style={{ height: 20 }} />
         </ScrollView>
       )}
     </SafeAreaView>
@@ -237,6 +300,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bgDark,
   },
+
+  // ── Header ──
   headerBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -259,9 +324,9 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: Colors.white,
   },
-  placeholder: {
-    width: 40,
-  },
+  placeholder: { width: 40 },
+
+  // ── Period ──
   periodSelector: {
     flexDirection: "row",
     backgroundColor: Colors.bgCard,
@@ -286,9 +351,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
-  periodTabTextActive: {
-    color: Colors.white,
-  },
+  periodTabTextActive: { color: Colors.white },
+
+  // ── Loader ──
   loaderContainer: {
     flex: 1,
     justifyContent: "center",
@@ -300,167 +365,278 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginTop: 12,
   },
+
+  // ── Scroll ──
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
   },
+
+  // ── Section heading ──
+  sectionHeading: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: Colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 14,
+  },
+
+  // ── Summary Grid ──
   summaryGrid: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   summaryCard: {
-    flex: 1,
     backgroundColor: Colors.bgCard,
     borderWidth: 1,
     borderColor: Colors.borderLight,
     borderRadius: 18,
     padding: 16,
   },
-  creditCard: {
-    // optional border glow
+  summaryCardWide: {
+    width: (width - 40 - 12) / 2,
   },
-  paymentCard: {
-    // optional border glow
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 8,
-  },
-  cardLabel: {
-    color: Colors.textSecondary,
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "uppercase",
-  },
-  cardValue: {
-    fontSize: 18,
-    fontWeight: "800",
-  },
-  healthCard: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-  },
-  healthHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  summaryIconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    backgroundColor: Colors.primaryGlow,
+    justifyContent: "center",
     alignItems: "center",
     marginBottom: 10,
   },
-  healthTitle: {
-    fontSize: 13,
+  summaryCardLabel: {
+    fontSize: 11,
     color: Colors.textSecondary,
     fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    marginBottom: 4,
   },
-  healthIndicator: {
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-    borderRadius: 6,
+  summaryCardValue: {
+    fontSize: 20,
+    fontWeight: "900",
   },
-  healthValue: {
-    fontSize: 24,
-    fontWeight: "800",
-    marginBottom: 8,
-  },
-  healthSubText: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    lineHeight: 16,
-  },
+
+  // ── Section Card ──
   sectionCard: {
     backgroundColor: Colors.bgCard,
     borderWidth: 1,
     borderColor: Colors.borderLight,
     borderRadius: 20,
-    padding: 20,
+    padding: 18,
+    marginBottom: 16,
+  },
+  sectionTitleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 15,
     color: Colors.white,
     fontWeight: "800",
-    marginBottom: 12,
+    marginBottom: 14,
   },
   legendRow: {
     flexDirection: "row",
-    gap: 16,
-    marginBottom: 20,
+    gap: 12,
   },
-  legendItem: {
+  legendDot: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 5,
   },
-  legendIndicator: {
-    width: 10,
-    height: 10,
-    borderRadius: 3,
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   legendText: {
     fontSize: 11,
     color: Colors.textSecondary,
     fontWeight: "600",
   },
-  chartWrapper: {
-    flexDirection: "row",
-    height: 160,
-    alignItems: "stretch",
-  },
-  chartYAxis: {
-    justifyContent: "space-between",
-    width: 60,
-    paddingBottom: 20,
-    paddingRight: 8,
-    alignItems: "flex-end",
-  },
-  yAxisLabel: {
-    fontSize: 9,
+  emptyNote: {
     color: Colors.textMuted,
-    fontWeight: "700",
+    textAlign: "center",
+    fontSize: 13,
+    fontWeight: "600",
+    paddingVertical: 12,
   },
-  chartContainer: {
-    flex: 1,
-    borderBottomWidth: 1,
-    borderLeftWidth: 1,
-    borderColor: Colors.border,
-    paddingBottom: 2,
+
+  // ── Bar Chart ──
+  chartOuter: {
+    marginTop: 4,
   },
   chartBarsRow: {
     flexDirection: "row",
-    justifyContent: "space-around",
     alignItems: "flex-end",
-    height: "100%",
+    height: CHART_HEIGHT,
+    gap: 4,
   },
-  chartColumn: {
-    alignItems: "center",
+  chartCol: {
     flex: 1,
-    height: "100%",
+    alignItems: "center",
     justifyContent: "flex-end",
   },
-  barsContainer: {
+  barsGroup: {
     flexDirection: "row",
     gap: 2,
     alignItems: "flex-end",
-    flex: 1,
-    justifyContent: "center",
-    paddingBottom: 4,
   },
   bar: {
     width: 6,
-    borderRadius: 2,
+    borderRadius: 3,
   },
-  chartLabel: {
+  barLabel: {
     fontSize: 9,
     color: Colors.textMuted,
     fontWeight: "700",
-    marginTop: 4,
-    height: 14,
+    marginTop: 5,
+  },
+  chartBaseline: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginTop: 2,
+  },
+
+  // ── Top Debtors ──
+  debtorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 14,
+    gap: 10,
+  },
+  debtorRank: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: Colors.bgElevated,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  debtorRankText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: Colors.textMuted,
+  },
+  debtorInfo: {
+    flex: 1,
+  },
+  debtorTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 5,
+  },
+  debtorName: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: Colors.white,
+    flex: 1,
+    marginRight: 8,
+  },
+  debtorBalance: {
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  debtorBarBg: {
+    height: 4,
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  debtorBarFill: {
+    height: "100%",
+    backgroundColor: Colors.error,
+    borderRadius: 2,
+  },
+
+  // ── Collection Rate ──
+  rateRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 14,
+    alignItems: "flex-start",
+  },
+  rateBlock: {
+    alignItems: "center",
+    gap: 8,
+  },
+  rateCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  collectedCircle: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primaryGlow,
+  },
+  pendingCircle: {
+    borderColor: Colors.error,
+    backgroundColor: "rgba(255,74,90,0.08)",
+  },
+  ratePercent: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: Colors.primary,
+  },
+  rateLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: Colors.textSecondary,
+  },
+  rateDivider: {
+    width: 1,
+    height: 72,
+    backgroundColor: Colors.borderLight,
+    alignSelf: "center",
+  },
+  rateBarWrapper: {
+    flex: 1,
+    minWidth: 120,
+    paddingTop: 4,
+  },
+  rateBarLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: Colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    marginBottom: 8,
+  },
+  rateBarBg: {
+    height: 10,
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 5,
+    overflow: "hidden",
+    marginBottom: 8,
+  },
+  rateBarFill: {
+    height: "100%",
+    backgroundColor: Colors.primary,
+    borderRadius: 5,
+  },
+  rateBarFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  rateBarSubL: {
+    fontSize: 10,
+    color: Colors.primary,
+    fontWeight: "700",
+  },
+  rateBarSubR: {
+    fontSize: 10,
+    color: Colors.error,
+    fontWeight: "700",
   },
 });
 

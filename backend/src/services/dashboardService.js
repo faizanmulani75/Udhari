@@ -152,18 +152,45 @@ async function getAnalytics(shopId, days = 7) {
   cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
 
   // Find all transactions in this period
-  const transactions = await prisma.transaction.findMany({
-    where: {
-      shopId,
-      deletedAt: null,
-      transactionDate: { gte: cutoffDate },
-    },
-    select: {
-      type: true,
-      amount: true,
-      transactionDate: true,
-    },
-  });
+  const [transactions, customersAdded, topDebtors] = await Promise.all([
+    prisma.transaction.findMany({
+      where: {
+        shopId,
+        deletedAt: null,
+        transactionDate: { gte: cutoffDate },
+      },
+      select: {
+        type: true,
+        amount: true,
+        transactionDate: true,
+      },
+    }),
+    // Customers added in the selected period
+    prisma.customer.count({
+      where: {
+        shopId,
+        deletedAt: null,
+        createdAt: { gte: cutoffDate },
+      },
+    }),
+    // Top 5 customers by outstanding balance
+    prisma.customer.findMany({
+      where: {
+        shopId,
+        balance: { gt: 0 },
+        deletedAt: null,
+        isActive: true,
+      },
+      orderBy: { balance: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        balance: true,
+      },
+    }),
+  ]);
 
   let totalCredit = 0;
   let totalPayments = 0;
@@ -204,6 +231,8 @@ async function getAnalytics(shopId, days = 7) {
     totalCredit,
     totalPayments,
     totalDebitAdjustments,
+    customersAdded,
+    topDebtors,
     dailyTrends,
   };
 

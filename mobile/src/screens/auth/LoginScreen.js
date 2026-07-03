@@ -18,13 +18,15 @@ import {
 } from "react-native";
 import Colors from "../../constants/colors";
 import useAuthStore from "../../store/authStore";
+import { Feather } from "@expo/vector-icons";
 
 const { width, height } = Dimensions.get("window");
 
 const LoginScreen = ({ navigation }) => {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  
+  const [showPassword, setShowPassword] = useState(false);
+
   const [isIdentifierFocused, setIsIdentifierFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
@@ -173,7 +175,7 @@ const LoginScreen = ({ navigation }) => {
                 style={styles.textInput}
                 placeholder="Password"
                 placeholderTextColor={Colors.textPlaceholder}
-                secureTextEntry
+                secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
                 value={password}
@@ -181,6 +183,18 @@ const LoginScreen = ({ navigation }) => {
                 onFocus={() => setIsPasswordFocused(true)}
                 onBlur={() => setIsPasswordFocused(false)}
               />
+              <TouchableOpacity
+                style={styles.eyeToggle}
+                onPress={() => setShowPassword((prev) => !prev)}
+                activeOpacity={0.7}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Feather
+                  name={showPassword ? "eye" : "eye-off"}
+                  size={18}
+                  color={isPasswordFocused ? Colors.primaryLight : Colors.textMuted}
+                />
+              </TouchableOpacity>
             </View>
 
             {/* Error Message */}
@@ -216,6 +230,17 @@ const LoginScreen = ({ navigation }) => {
             >
               <Text style={styles.signupText}>
                 Don't have an account? <Text style={styles.signupLink}>Sign Up</Text>
+              </Text>
+            </TouchableOpacity>
+
+            {/* Join Shop Link for Staff */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("StaffJoin")}
+              style={styles.joinContainer}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.joinText}>
+                Are you a staff member? <Text style={styles.joinLink}>Join a Shop</Text>
               </Text>
             </TouchableOpacity>
           </Animated.View>
@@ -331,6 +356,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textPrimary,
   },
+  eyeToggle: {
+    padding: 4,
+    marginLeft: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -384,6 +415,19 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   signupLink: {
+    color: Colors.primaryLight,
+    fontWeight: "700",
+  },
+  joinContainer: {
+    alignItems: "center",
+    marginTop: 8,
+    paddingVertical: 8,
+  },
+  joinText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  joinLink: {
     color: Colors.primaryLight,
     fontWeight: "700",
   },

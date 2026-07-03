@@ -7,6 +7,7 @@ const ApiError = require("../utils/ApiError");
 const prisma = require("../config/prisma");
 const crypto = require("crypto");
 const { logActivity } = require("../utils/auditLogger");
+const { createNotification, notifyOwner } = require("../services/notificationService");
 
 /**
  * Generate mock authId from phone (same helper as authService.js)
@@ -15,6 +16,20 @@ const getMockAuthId = (phone) => {
   const cleanPhone = phone.replace(/\D/g, "");
   const padded = cleanPhone.padEnd(12, "0").substring(0, 12);
   return `00000000-0000-4000-8000-${padded}`;
+};
+
+/**
+ * Generate a secure 8-character invite code formatted as UDH-XXXX-XXXX
+ */
+const generateInviteCode = () => {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // No O, 0, I, 1 to prevent user error
+  let p1 = "";
+  let p2 = "";
+  for (let i = 0; i < 4; i++) {
+    p1 += chars.charAt(Math.floor(Math.random() * chars.length));
+    p2 += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `UDH-${p1}-${p2}`;
 };
 
 /**
@@ -97,6 +112,9 @@ const inviteStaff = catchAsync(async (req, res) => {
     where: { authId: tempAuthId, deletedAt: null },
   });
 
+  const inviteCode = generateInviteCode();
+  const inviteCodeExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+
   // Create user
   const newUser = await prisma.user.create({
     data: {
@@ -105,6 +123,9 @@ const inviteStaff = catchAsync(async (req, res) => {
       name: name.trim(),
       phone: phone.trim(),
       role: role.trim(),
+      inviteCode,
+      inviteCodeExpiresAt,
+      inviteCodeUsed: false,
     },
   });
 
@@ -114,6 +135,14 @@ const inviteStaff = catchAsync(async (req, res) => {
     "INVITE_STAFF",
     `Invited staff member ${newUser.name} with phone ${newUser.phone}`
   );
+
+  // Notify the owner about the new staff invite
+  notifyOwner(
+    req.shopId,
+    "👤 Staff Member Invited",
+    `${newUser.name} (${newUser.phone}) has been added as ${newUser.role}. Share the invite code: ${inviteCode}`,
+    "STAFF"
+  ).catch(() => {});
 
   return ApiResponse.created(res, "Staff member invited successfully", newUser);
 });
@@ -157,6 +186,14 @@ const deleteStaff = catchAsync(async (req, res) => {
     "REMOVE_STAFF",
     `Removed staff member ${user.name}`
   );
+
+  // Notify the owner about the removal
+  notifyOwner(
+    req.shopId,
+    "🗑️ Staff Member Removed",
+    `${user.name} has been removed from your shop.`,
+    "STAFF"
+  ).catch(() => {});
 
   return ApiResponse.success(res, "Staff member removed successfully");
 });
@@ -203,9 +240,56 @@ const updateStaff = catchAsync(async (req, res) => {
   return ApiResponse.success(res, "Staff member updated successfully", updatedUser);
 });
 
+/**
+ * POST /api/v1/staff/:id/regenerate-code
+ * Regenerate invite code for a staff member.
+ */
+const regenerateInviteCode = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  // Retrieve user to make sure they belong to the shop and are not the owner
+  const user = await prisma.user.findFirst({
+    where: {
+      id,
+      shopId: req.shopId,
+      deletedAt: null,
+    },
+  });
+
+  if (!user) {
+    throw ApiError.notFound("Staff member not found");
+  }
+
+  if (user.role === "owner") {
+    throw ApiError.badRequest("Cannot generate invite code for the shop owner");
+  }
+
+  const inviteCode = generateInviteCode();
+  const inviteCodeExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+
+  const updatedUser = await prisma.user.update({
+    where: { id },
+    data: {
+      inviteCode,
+      inviteCodeExpiresAt,
+      inviteCodeUsed: false,
+    },
+  });
+
+  await logActivity(
+    req.shopId,
+    req.userId,
+    "REGENERATE_STAFF_INVITE",
+    `Regenerated invite code for staff member ${updatedUser.name}`
+  );
+
+  return ApiResponse.success(res, "Invite code regenerated successfully", updatedUser);
+});
+
 module.exports = {
   getStaff,
   inviteStaff,
   deleteStaff,
   updateStaff,
+  regenerateInviteCode,
 };

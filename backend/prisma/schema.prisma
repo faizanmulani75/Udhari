@@ -85,6 +85,7 @@ model Shop {
   transactions  Transaction[]
   subscriptions Subscription[]
   reminders     Reminder[]
+  notifications Notification[]
 
   @@index([phone])
   @@map("shops")
@@ -108,6 +109,11 @@ model User {
   deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Invite Code details for staff registration flow
+  inviteCode          String?   @map("invite_code") @db.VarChar(50)
+  inviteCodeExpiresAt DateTime? @map("invite_code_expires_at") @db.Timestamptz
+  inviteCodeUsed      Boolean   @default(false) @map("invite_code_used")
 
   // Relations
   shop                Shop?         @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -336,5 +342,29 @@ model TransactionNote {
   @@index([transactionId])
   @@index([shopId])
   @@map("transaction_notes")
+}
+
+// ========================
+// 11. NOTIFICATIONS
+// ========================
+// In-app notifications for shop owners and staff.
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  shopId    String   @map("shop_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  title     String   @db.VarChar(255)
+  message   String   @db.Text
+  type      String   @db.VarChar(50) // "TRANSACTION", "DISPUTE", "STAFF", "SYSTEM"
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([shopId])
+  @@index([createdAt])
+  @@map("notifications")
 }
 

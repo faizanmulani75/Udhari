@@ -13,6 +13,8 @@ router.post("/verify-otp", authController.verifyOtp);
 router.post("/register", authController.register);
 router.post("/register/verify", authController.registerVerify);
 router.post("/login", authController.login);
+router.post("/staff/verify-invite", authController.verifyStaffInvite);
+router.post("/staff/activate", authController.activateStaffAccount);
 
 // Protected routes
 router.get("/me", authMiddleware, authController.getProfile);

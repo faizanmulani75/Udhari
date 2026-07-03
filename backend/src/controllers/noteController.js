@@ -5,6 +5,7 @@ const prisma = require("../config/prisma");
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 const catchAsync = require("../utils/catchAsync");
+const { notifyAllShopUsers } = require("../services/notificationService");
 
 /**
  * GET /api/v1/notes/transaction/:transactionId
@@ -57,6 +58,16 @@ const addTransactionNote = catchAsync(async (req, res) => {
       isDispute: isDispute || false,
     },
   });
+
+  // If this is a dispute, notify all shop users immediately
+  if (isDispute) {
+    notifyAllShopUsers(
+      req.shopId,
+      "🚨 Dispute Raised",
+      `A dispute has been raised on a transaction: "${content.trim().substring(0, 100)}${content.trim().length > 100 ? '...' : ''}"`,
+      "DISPUTE"
+    ).catch(() => {});
+  }
 
   return ApiResponse.created(res, "Note added", note);
 });

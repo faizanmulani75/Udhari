@@ -1,7 +1,7 @@
 // src/services/shopService.js
 // Shop-related API calls — register shop (onboarding), fetch details, update details, deactivate.
 
-import api from "./api";
+import api from "./apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 /**

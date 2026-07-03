@@ -53,6 +53,20 @@ const shopContext = async (req, res, next) => {
       currency: shop.currency,
     };
 
+    // Attach the current user's role so controllers can check it
+    // (e.g. to decide whether to notify the owner of a staff action)
+    if (req.userId) {
+      try {
+        const user = await prisma.user.findFirst({
+          where: { id: req.userId, shopId: shop.id, deletedAt: null },
+          select: { role: true },
+        });
+        req.userRole = user?.role || "staff";
+      } catch (_) {
+        req.userRole = "staff";
+      }
+    }
+
     next();
   } catch (error) {
     next(error);

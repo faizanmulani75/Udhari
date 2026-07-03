@@ -1,7 +1,7 @@
 // src/services/dashboardService.js
 // Dashboard reporting API requests.
 
-import api from "./api";
+import api from "./apiClient";
 
 /**
  * Fetch consolidated dashboard details (summary, top debtors, recent activities).

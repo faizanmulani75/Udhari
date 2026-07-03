@@ -1,7 +1,7 @@
 // src/services/tagService.js
 // API calls for tag management (CRUD + Customer assignment).
 
-import api from "./api";
+import api from "./apiClient";
 
 /**
  * Get all tags for the shop.

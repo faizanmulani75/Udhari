@@ -1,7 +1,7 @@
 // src/services/transactionService.js
 // Ledger and transaction API requests.
 
-import api from "./api";
+import api from "./apiClient";
 
 /**
  * Add a credit transaction (give goods on credit).

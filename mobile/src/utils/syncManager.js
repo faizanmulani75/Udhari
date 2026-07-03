@@ -66,6 +66,24 @@ export const queueOfflineTransaction = async (customerId, type, data, customerNa
   return newTx;
 };
 
+export const queueOfflineAction = async (config) => {
+  const queue = await getOfflineTransactions();
+  
+  const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const newTx = {
+    tempId,
+    type: "generic_action",
+    method: config.method,
+    url: config.url,
+    data: config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : null,
+    timestamp: new Date().toISOString(),
+  };
+
+  queue.push(newTx);
+  await saveOfflineTransactions(queue);
+  return newTx;
+};
+
 /**
  * Synchronize all queued transactions to the backend server.
  */
@@ -87,7 +105,23 @@ export const syncQueuedTransactions = async (onProgressUpdate) => {
 
   for (const tx of queue) {
     try {
-      if (tx.type === "credit") {
+      if (tx.type === "generic_action") {
+        // Use standard axios to avoid circular dependency, but add tokens
+        const token = await AsyncStorage.getItem("accessToken");
+        const shopId = await AsyncStorage.getItem("shopId");
+        
+        await axios({
+          baseURL: Config.API_URL,
+          method: tx.method,
+          url: tx.url,
+          data: tx.data,
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+            ...(shopId && { "x-shop-id": shopId }),
+          }
+        });
+      } else if (tx.type === "credit") {
         await transactionService.addCredit(tx.customerId, tx.data);
       } else if (tx.type === "payment") {
         await transactionService.addPayment(tx.customerId, tx.data);

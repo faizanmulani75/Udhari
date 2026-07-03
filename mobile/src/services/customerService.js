@@ -1,7 +1,7 @@
 // src/services/customerService.js
 // Customer-related API calls — list, fetch details, create, update, delete, credit check.
 
-import api from "./api";
+import api from "./apiClient";
 
 /**
  * Get paginated, searchable customer list.

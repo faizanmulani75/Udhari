@@ -29,6 +29,7 @@ import { sendBulkReminders } from "../../services/reminderService";
 import { voiceEntry } from "../../services/transactionService";
 import useTransactionStore from "../../store/transactionStore";
 import useCustomerStore from "../../store/customerStore";
+import useNotificationStore from "../../store/notificationStore";
 import { LinearGradient } from "expo-linear-gradient";
 
 let ExpoSpeechRecognitionModule = null;
@@ -70,6 +71,7 @@ const DashboardScreen = ({ navigation }) => {
 
   const { addCredit, addPayment } = useTransactionStore();
   const { createCustomer } = useCustomerStore();
+  const { unreadCount, fetchUnreadCount } = useNotificationStore();
 
   const [isNewCustomerModalVisible, setIsNewCustomerModalVisible] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState(null);
@@ -337,6 +339,7 @@ const DashboardScreen = ({ navigation }) => {
       fetchDashboard();
       fetchShop();
       checkPendingSync();
+      fetchUnreadCount();
     }, [])
   );
 
@@ -367,9 +370,19 @@ const DashboardScreen = ({ navigation }) => {
           </Text>
           <Text style={styles.shopNameText}>{shop?.name || "My Business"}</Text>
         </View>
-        <View style={styles.badgeCircle}>
-          <Feather name="shopping-bag" size={18} color={Colors.primaryLight} />
-        </View>
+        <TouchableOpacity 
+          style={styles.notificationBtn}
+          onPress={() => navigation.navigate("NotificationScreen")}
+        >
+          <Feather name="bell" size={20} color={unreadCount > 0 ? Colors.primary : Colors.white} />
+          {unreadCount > 0 && (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -1240,6 +1253,32 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontSize: 14,
     marginBottom: 16,
+  },
+  notificationBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.bgElevated,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    backgroundColor: Colors.success,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: Colors.bgDark,
+  },
+  notificationBadgeText: {
+    color: Colors.white,
+    fontSize: 8,
+    fontWeight: "900",
   },
 });
 

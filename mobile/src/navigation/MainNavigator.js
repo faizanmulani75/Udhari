@@ -10,6 +10,7 @@ import Colors from "../constants/colors";
 
 // Screen imports
 import DashboardScreen from "../screens/dashboard/DashboardScreen";
+import NotificationScreen from "../screens/dashboard/NotificationScreen";
 import SettingsScreen from "../screens/settings/SettingsScreen";
 import SubscriptionScreen from "../screens/settings/SubscriptionScreen";
 import ManageStaffScreen from "../screens/settings/ManageStaffScreen";
@@ -29,6 +30,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const Tab = createBottomTabNavigator();
 const CustomerStack = createNativeStackNavigator();
 const SettingsStack = createNativeStackNavigator();
+const RootStack = createNativeStackNavigator();
 
 // ── Settings Stack Navigator ──
 const SettingsStackNavigator = () => {
@@ -86,8 +88,8 @@ const TabIcon = ({ name, focused }) => {
   );
 };
 
-// ── Main Tab Navigator ──
-const MainNavigator = () => {
+// ── Tab Navigator (internal) ──
+const TabNavigator = () => {
   const insets = useSafeAreaInsets();
 
   return (
@@ -164,5 +166,25 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1.1 }],
   },
 });
+
+// ── Root Navigator — wraps Tab + full-screen modals ──
+const MainNavigator = () => {
+  return (
+    <RootStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: Colors.bgDark },
+        animation: "slide_from_right",
+      }}
+    >
+      <RootStack.Screen name="Tabs" component={TabNavigator} />
+      <RootStack.Screen
+        name="NotificationScreen"
+        component={NotificationScreen}
+        options={{ animation: "slide_from_right" }}
+      />
+    </RootStack.Navigator>
+  );
+};
 
 export default MainNavigator;

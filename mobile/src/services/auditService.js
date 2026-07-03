@@ -1,7 +1,7 @@
 // src/services/auditService.js
 // API client for fetching audit logs.
 
-import api from "./api";
+import api from "./apiClient";
 
 /**
  * Fetch all audit logs for the active shop.

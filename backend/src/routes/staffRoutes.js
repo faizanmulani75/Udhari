@@ -18,4 +18,7 @@ router.delete("/:id", staffController.deleteStaff);
 // Update a staff user (e.g. change role / restrict account)
 router.put("/:id", staffController.updateStaff);
 
+// Regenerate staff invite code
+router.post("/:id/regenerate-code", staffController.regenerateInviteCode);
+
 module.exports = router;

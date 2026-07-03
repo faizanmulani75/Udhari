@@ -54,7 +54,8 @@
           "backgroundColor": "#121217",
           "imageWidth": 200
         }
-      ]
+      ],
+      "expo-secure-store"
     ]
   }
 }

@@ -1,58 +1,53 @@
 // src/services/api.js
-// Axios instance with interceptors for auth headers and error handling.
-// All service files import this instead of raw axios.
-
-import axios from "axios";
+// Adds offline caching and queueing interceptors to apiClient.
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Config from "../constants/config";
-
-const api = axios.create({
-  baseURL: Config.API_URL,
-  timeout: 30000,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// ── Request Interceptor ──────────────────────────────────
-// Attaches the access token and shop_id to every outgoing request.
-
-api.interceptors.request.use(
-  async (config) => {
-    try {
-      const token = await AsyncStorage.getItem("accessToken");
-      const shopId = await AsyncStorage.getItem("shopId");
-
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      if (shopId) {
-        config.headers["x-shop-id"] = shopId;
-      }
-    } catch (error) {
-      // Silently fail — the request will proceed without auth headers
-      console.warn("Failed to read auth tokens:", error.message);
-    }
-
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+import apiClient from "./apiClient";
+import { getCache, setCache } from "../utils/cacheService";
+import { queueOfflineAction } from "../utils/syncManager";
 
 // ── Response Interceptor ─────────────────────────────────
-// Extracts a clean error message from API responses.
+// Extracts a clean error message from API responses and handles offline capabilities.
 
-api.interceptors.response.use(
-  (response) => response,
+apiClient.interceptors.response.use(
+  (response) => {
+    // Cache successful GET requests
+    if (response.config.method?.toLowerCase() === 'get') {
+      const urlKey = response.config.url + (response.config.params ? JSON.stringify(response.config.params) : '');
+      setCache(urlKey, response.data);
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
+
+    // Handle Network Errors (Offline)
+    if (!error.response && originalRequest) {
+      const method = originalRequest.method?.toLowerCase();
+      
+      if (method === 'get') {
+        const urlKey = originalRequest.url + (originalRequest.params ? JSON.stringify(originalRequest.params) : '');
+        const cachedData = await getCache(urlKey);
+        if (cachedData) {
+          return Promise.resolve({ data: cachedData, status: 200, fromCache: true });
+        }
+      } else if (['post', 'put', 'patch', 'delete'].includes(method)) {
+        await queueOfflineAction({
+          method: originalRequest.method,
+          url: originalRequest.url,
+          data: originalRequest.data
+        });
+        
+        return Promise.resolve({ 
+          data: { success: true, message: "Action queued for sync.", data: {} },
+          status: 200,
+          queued: true 
+        });
+      }
+    }
 
     // If 401 and we haven't already retried, clear tokens (session expired)
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-
-      // Clear stored credentials — the auth store listener will
-      // redirect to login screen
       await AsyncStorage.multiRemove(["accessToken", "refreshToken", "shopId", "user"]);
     }
 
@@ -67,4 +62,4 @@ api.interceptors.response.use(
   }
 );
 
-export default api;
+export default apiClient;

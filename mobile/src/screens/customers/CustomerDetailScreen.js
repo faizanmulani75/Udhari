@@ -23,7 +23,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import useCustomerStore from "../../store/customerStore";
 import useAuthStore from "../../store/authStore";
 import Colors from "../../constants/colors";
-import { formatCurrency, formatDate } from "../../utils/format";
+import { formatCurrency, formatDate, formatRelativeDate } from "../../utils/format";
 import { Feather } from "@expo/vector-icons";
 import Button from "../../components/common/Button";
 import api from "../../services/api";
@@ -359,40 +359,20 @@ const CustomerDetailScreen = ({ route, navigation }) => {
         <View style={styles.infoCard}>
           <Text style={styles.sectionTitle}>Grahak Details</Text>
           
+          {selectedCustomer.notes && (
+            <View style={styles.notesHighlightCard}>
+              <View style={styles.notesHeader}>
+                <Feather name="bookmark" size={14} color={Colors.accentLight} style={{ marginRight: 6 }} />
+                <Text style={styles.notesLabel}>Grahak Note</Text>
+              </View>
+              <Text style={styles.notesText}>{selectedCustomer.notes}</Text>
+            </View>
+          )}
+
           <View style={styles.infoField}>
             <Text style={styles.infoLabel}>Phone</Text>
             <Text style={styles.infoValue}>{selectedCustomer.phone}</Text>
           </View>
-
-          {selectedCustomer.email && (
-            <View style={styles.infoField}>
-              <Text style={styles.infoLabel}>Email</Text>
-              <Text style={styles.infoValue}>{selectedCustomer.email}</Text>
-            </View>
-          )}
-
-          <View style={styles.infoField}>
-            <Text style={styles.infoLabel}>Udhari Limit</Text>
-            <Text style={styles.infoValue}>
-              {creditLimit > 0
-                ? formatCurrency(creditLimit, currencyCode)
-                : "No Limit Set"}
-            </Text>
-          </View>
-
-          {selectedCustomer.address && (
-            <View style={styles.infoField}>
-              <Text style={styles.infoLabel}>Address</Text>
-              <Text style={styles.infoValue}>{selectedCustomer.address}</Text>
-            </View>
-          )}
-
-          {selectedCustomer.notes && (
-            <View style={styles.infoField}>
-              <Text style={styles.infoLabel}>Notes</Text>
-              <Text style={styles.infoValue}>{selectedCustomer.notes}</Text>
-            </View>
-          )}
 
           <View style={styles.infoField}>
             <Text style={styles.infoLabel}>Tags</Text>
@@ -460,7 +440,7 @@ const CustomerDetailScreen = ({ route, navigation }) => {
                     <Text style={styles.txnType}>
                       {txn.type} {txn.paymentMethod ? `(${txn.paymentMethod})` : ""}
                     </Text>
-                    <Text style={styles.txnDate}>{formatDate(txn.transactionDate, true)}</Text>
+                    <Text style={styles.txnDate}>{formatRelativeDate(txn.transactionDate)}</Text>
                     {txn.description && (
                       <Text style={styles.txnDesc} numberOfLines={1}>
                         {txn.description}
@@ -1022,6 +1002,31 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     maxWidth: "60%",
     textAlign: "right",
+  },
+  notesHighlightCard: {
+    backgroundColor: "rgba(255, 142, 37, 0.07)",
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255, 142, 37, 0.18)",
+    marginBottom: 16,
+  },
+  notesHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  notesLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: Colors.accentLight,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  notesText: {
+    fontSize: 13.5,
+    color: Colors.textSecondary,
+    lineHeight: 18,
   },
   txnBlock: {
     backgroundColor: Colors.bgCard,

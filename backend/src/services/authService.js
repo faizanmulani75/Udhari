@@ -605,12 +605,122 @@ const login = async (identifier, password) => {
   };
 };
 
+/**
+ * Verify a staff member's invite code.
+ */
+const verifyStaffInvite = async (inviteCode) => {
+  if (!inviteCode) {
+    throw ApiError.badRequest("Invite code is required");
+  }
+
+  const user = await prisma.user.findFirst({
+    where: {
+      inviteCode: inviteCode.trim(),
+      deletedAt: null,
+      inviteCodeUsed: false,
+    },
+    include: {
+      shop: true,
+    },
+  });
+
+  if (!user) {
+    throw ApiError.badRequest("Invalid or already used invite code");
+  }
+
+  if (user.inviteCodeExpiresAt && new Date() > user.inviteCodeExpiresAt) {
+    throw ApiError.badRequest("Invite code has expired. Please ask your shop owner to regenerate it.");
+  }
+
+  return {
+    staffName: user.name,
+    shopName: user.shop?.name || "Udhari Shop",
+    phone: user.phone,
+  };
+};
+
+/**
+ * Activate a staff account with a password using the invite code.
+ */
+const activateStaffAccount = async (inviteCode, password) => {
+  if (!inviteCode || !password) {
+    throw ApiError.badRequest("Invite code and password are required");
+  }
+
+  if (password.length < 6) {
+    throw ApiError.badRequest("Password must be at least 6 characters long");
+  }
+
+  const user = await prisma.user.findFirst({
+    where: {
+      inviteCode: inviteCode.trim(),
+      deletedAt: null,
+      inviteCodeUsed: false,
+    },
+    include: {
+      shop: true,
+    },
+  });
+
+  if (!user) {
+    throw ApiError.badRequest("Invalid or already used invite code");
+  }
+
+  if (user.inviteCodeExpiresAt && new Date() > user.inviteCodeExpiresAt) {
+    throw ApiError.badRequest("Invite code has expired. Please ask your shop owner to regenerate it.");
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  // Update user in DB
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash,
+      inviteCodeUsed: true,
+      isActive: true,
+    },
+  });
+
+  // Generate JWT access token
+  const tokenPayload = {
+    authId: updatedUser.authId,
+    phone: updatedUser.phone,
+    userId: updatedUser.id,
+    shopId: updatedUser.shopId,
+  };
+
+  const accessToken = jwt.sign(tokenPayload, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN,
+  });
+
+  return {
+    accessToken,
+    user: {
+      id: updatedUser.id,
+      name: updatedUser.name,
+      phone: updatedUser.phone,
+      email: updatedUser.email,
+      role: updatedUser.role
+    },
+    shop: user.shop ? {
+      id: user.shop.id,
+      name: user.shop.name,
+      phone: user.shop.phone,
+      currency: user.shop.currency,
+      upiId: user.shop.upiId
+    } : null
+  };
+};
+
 module.exports = {
   sendOtp,
   verifyOtp,
   getProfile,
   registerRequest,
   registerVerify,
-  login
+  login,
+  verifyStaffInvite,
+  activateStaffAccount,
 };
 

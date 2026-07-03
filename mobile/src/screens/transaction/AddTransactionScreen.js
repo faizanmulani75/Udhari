@@ -318,10 +318,6 @@ const AddTransactionScreen = ({ route, navigation }) => {
       }
     }
 
-    if (type === "CREDIT" && !description.trim()) {
-      tempErrors.description = "Khata details (Items / Description) is required";
-    }
-
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
   };
@@ -344,6 +340,14 @@ const AddTransactionScreen = ({ route, navigation }) => {
     if (!isOnline) {
       const typeLower = type.toLowerCase(); // 'credit', 'payment', 'debit'
       await queueOfflineTransaction(customerId, typeLower, txnData, customer.name);
+
+      // Trigger warning haptic for offline queuing
+      try {
+        const Haptics = require("expo-haptics");
+        if (Haptics && typeof Haptics.notificationAsync === "function") {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        }
+      } catch (e) {}
 
       Alert.alert(
         "Saved Offline ⏳",
@@ -370,6 +374,14 @@ const AddTransactionScreen = ({ route, navigation }) => {
     }
 
     if (result) {
+      // Trigger success haptic feedback
+      try {
+        const Haptics = require("expo-haptics");
+        if (Haptics && typeof Haptics.notificationAsync === "function") {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+      } catch (e) {}
+      
       navigation.goBack();
     }
   };

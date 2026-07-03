@@ -42,3 +42,31 @@ export const formatDate = (dateVal, includeTime = false) => {
 
   return d.toLocaleDateString("en-IN", options);
 };
+
+/**
+ * Format date to a friendly relative indicator (Today, Yesterday, or X days ago)
+ *
+ * @param {string|Date} dateVal
+ * @returns {string} Relative or formatted date string
+ */
+export const formatRelativeDate = (dateVal) => {
+  if (!dateVal) return "";
+  const date = new Date(dateVal);
+  const now = new Date();
+  
+  // Reset time portions for pure day-to-day comparison
+  const dStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const nowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  const diffTime = nowStart.getTime() - dStart.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays > 1 && diffDays < 7) return `${diffDays} days ago`;
+  
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+  });
+};

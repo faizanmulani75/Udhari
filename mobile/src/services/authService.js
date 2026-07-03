@@ -1,7 +1,7 @@
 // src/services/authService.js
 // Authentication API calls — send OTP, verify OTP, fetch user profile, logout.
 
-import api from "./api";
+import api from "./apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 /**
@@ -126,6 +126,27 @@ export const verifyRegister = async (email, otp) => {
  */
 export const login = async (identifier, password) => {
   const response = await api.post("/auth/login", { identifier, password });
+  return response.data;
+};
+
+/**
+ * Verify a staff invite code.
+ * @param {string} inviteCode
+ * @returns {Promise<object>}
+ */
+export const verifyStaffInvite = async (inviteCode) => {
+  const response = await api.post("/auth/staff/verify-invite", { inviteCode });
+  return response.data;
+};
+
+/**
+ * Activate a staff account with a password.
+ * @param {string} inviteCode
+ * @param {string} password
+ * @returns {Promise<object>}
+ */
+export const activateStaffAccount = async (inviteCode, password) => {
+  const response = await api.post("/auth/staff/activate", { inviteCode, password });
   return response.data;
 };
 

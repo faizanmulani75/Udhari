@@ -150,7 +150,10 @@ exports.Prisma.UserScalarFieldEnum = {
   isActive: 'isActive',
   deletedAt: 'deletedAt',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  inviteCode: 'inviteCode',
+  inviteCodeExpiresAt: 'inviteCodeExpiresAt',
+  inviteCodeUsed: 'inviteCodeUsed'
 };
 
 exports.Prisma.CustomerScalarFieldEnum = {
@@ -258,6 +261,17 @@ exports.Prisma.TransactionNoteScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.NotificationScalarFieldEnum = {
+  id: 'id',
+  shopId: 'shopId',
+  userId: 'userId',
+  title: 'title',
+  message: 'message',
+  type: 'type',
+  isRead: 'isRead',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -323,7 +337,8 @@ exports.Prisma.ModelName = {
   AuditLog: 'AuditLog',
   Tag: 'Tag',
   CustomerTag: 'CustomerTag',
-  TransactionNote: 'TransactionNote'
+  TransactionNote: 'TransactionNote',
+  Notification: 'Notification'
 };
 
 /**

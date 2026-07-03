@@ -13,12 +13,15 @@ import {
   Modal,
   TextInput,
   StatusBar,
+  Clipboard,
+  Linking,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import Colors from "../../constants/colors";
 import Button from "../../components/common/Button";
-import { getStaff, inviteStaff, deleteStaff, updateStaff } from "../../services/staffService";
+import { getStaff, inviteStaff, deleteStaff, updateStaff, regenerateInviteCode } from "../../services/staffService";
 import useShopStore from "../../store/shopStore";
 import useAuthStore from "../../store/authStore";
 
@@ -30,6 +33,7 @@ const ManageStaffScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [newStaffDetails, setNewStaffDetails] = useState(null);
 
   // Invite Form Fields
   const [name, setName] = useState("");
@@ -100,11 +104,11 @@ const ManageStaffScreen = ({ navigation }) => {
         role: "staff",
       });
 
-      if (res && res.success) {
-        Alert.alert("Success 🎉", "Staff member successfully added.");
+      if (res && res.success && res.data) {
         setModalVisible(false);
         setName("");
         setPhone("+91");
+        setNewStaffDetails(res.data);
         fetchStaffMembers();
       } else {
         Alert.alert("Invitation Failed", res.message || "Failed to add staff.");
@@ -113,10 +117,45 @@ const ManageStaffScreen = ({ navigation }) => {
       console.warn("Invite staff failed:", err);
       Alert.alert(
         "Error",
-        err.message || "Could not complete invitation. Please check inputs."
+        err.response?.data?.message || err.message || "Could not complete invitation. Please check inputs."
       );
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const getExpirationText = (expiresAt) => {
+    if (!expiresAt) return "";
+    const expiry = new Date(expiresAt);
+    const now = new Date();
+    const diffMs = expiry - now;
+    if (diffMs <= 0) return "Expired";
+    
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    return `Expires in ${diffHours}h ${diffMins}m`;
+  };
+
+  const handleShareWhatsApp = (member) => {
+    if (!member) return;
+    const msg = `Namaste! You have been invited to join ${shop?.name || "our shop"} on Udhari. Please download the app, tap "Join a Shop" on the login screen, and enter this Invite Code:\n\n👉 *${member.inviteCode}*\n\nThis code is valid for 48 hours. Please set your password to log in.`;
+    const url = `whatsapp://send?text=${encodeURIComponent(msg)}`;
+    Linking.openURL(url).catch(() => {
+      Alert.alert("WhatsApp Not Installed", "Could not open WhatsApp. Copied code to clipboard instead.");
+      Clipboard.setString(member.inviteCode);
+    });
+  };
+
+  const handleRegenerateInviteCode = async (memberId) => {
+    try {
+      const res = await regenerateInviteCode(memberId);
+      if (res && res.success && res.data) {
+        Alert.alert("Invite Code Regenerated 🎉", `New Code: ${res.data.inviteCode}`);
+        fetchStaffMembers();
+      }
+    } catch (err) {
+      console.warn("Regenerate code error:", err);
+      Alert.alert("Error", err.response?.data?.message || "Failed to regenerate invite code.");
     }
   };
 
@@ -221,72 +260,119 @@ const ManageStaffScreen = ({ navigation }) => {
         <View style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             {staffList.map((member) => (
-              <View key={member.id} style={styles.staffCard}>
-                <View style={styles.staffMeta}>
-                  <View style={styles.avatarMini}>
-                    <Text style={styles.avatarMiniText}>
-                      {member.name.substring(0, 2).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={styles.staffDetails}>
-                    <View style={styles.nameRow}>
-                      <Text style={styles.staffName}>{member.name}</Text>
-                      <View
-                        style={[
-                          styles.roleBadge,
-                          member.role === "owner"
-                            ? styles.ownerBadge
-                            : member.role === "restricted"
-                            ? styles.restrictedBadge
-                            : styles.staffBadge,
-                        ]}
-                      >
-                        <Text style={[
-                          styles.roleBadgeText,
-                          member.role === "owner"
-                            ? styles.ownerBadgeText
-                            : member.role === "restricted"
-                            ? styles.restrictedBadgeText
-                            : styles.staffBadgeText
-                        ]}>
-                          {member.role.toUpperCase()}
-                        </Text>
-                      </View>
+              <View key={member.id} style={styles.staffCardWrapper}>
+                <View style={styles.staffCard}>
+                  <View style={styles.staffMeta}>
+                    <View style={styles.avatarMini}>
+                      <Text style={styles.avatarMiniText}>
+                        {member.name.substring(0, 2).toUpperCase()}
+                      </Text>
                     </View>
-                    <Text style={styles.staffPhone}>{member.phone}</Text>
+                    <View style={styles.staffDetails}>
+                      <View style={styles.nameRow}>
+                        <Text style={styles.staffName}>{member.name}</Text>
+                        <View
+                          style={[
+                            styles.roleBadge,
+                            member.role === "owner"
+                              ? styles.ownerBadge
+                              : member.role !== "owner" && !member.inviteCodeUsed
+                              ? styles.pendingBadge
+                              : member.role === "restricted"
+                              ? styles.restrictedBadge
+                              : styles.staffBadge,
+                          ]}
+                        >
+                          <Text style={[
+                            styles.roleBadgeText,
+                            member.role === "owner"
+                              ? styles.ownerBadgeText
+                              : member.role !== "owner" && !member.inviteCodeUsed
+                              ? styles.pendingBadgeText
+                              : member.role === "restricted"
+                              ? styles.restrictedBadgeText
+                              : styles.staffBadgeText
+                          ]}>
+                            {member.role === "owner" ? "OWNER" : !member.inviteCodeUsed ? "PENDING" : member.role.toUpperCase()}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={styles.staffPhone}>{member.phone}</Text>
+                    </View>
                   </View>
+
+                  {user?.role === "owner" && member.role !== "owner" && (
+                    <View style={styles.actionRow}>
+                      {member.inviteCodeUsed && (
+                        <TouchableOpacity
+                          onPress={() => handleToggleRestriction(member)}
+                          style={[
+                            styles.restrictBtn,
+                            member.role === "restricted" ? styles.restrictedActiveBtn : null,
+                          ]}
+                          activeOpacity={0.8}
+                        >
+                          <Feather
+                            name={member.role === "restricted" ? "shield-off" : "shield"}
+                            size={14}
+                            color={member.role === "restricted" ? Colors.warning : Colors.textSecondary}
+                          />
+                          <Text style={[
+                            styles.restrictBtnText,
+                            { color: member.role === "restricted" ? Colors.warning : Colors.textSecondary }
+                          ]}>
+                            {member.role === "restricted" ? "Unrestrict" : "Restrict"}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+
+                      <TouchableOpacity
+                        onPress={() => handleDeleteStaff(member)}
+                        style={styles.deleteBtn}
+                        activeOpacity={0.8}
+                      >
+                        <Feather name="trash-2" size={18} color={Colors.error} />
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
 
-                {user?.role === "owner" && member.role !== "owner" && (
-                  <View style={styles.actionRow}>
-                    <TouchableOpacity
-                      onPress={() => handleToggleRestriction(member)}
-                      style={[
-                        styles.restrictBtn,
-                        member.role === "restricted" ? styles.restrictedActiveBtn : null,
-                      ]}
-                      activeOpacity={0.8}
-                    >
-                      <Feather
-                        name={member.role === "restricted" ? "shield-off" : "shield"}
-                        size={14}
-                        color={member.role === "restricted" ? Colors.warning : Colors.textSecondary}
-                      />
+                {member.role !== "owner" && !member.inviteCodeUsed && (
+                  <View style={styles.inviteCodeContainer}>
+                    <View style={styles.codeRow}>
+                      <Text style={styles.inviteCodeLabel}>Invite Code: </Text>
+                      <Text style={styles.inviteCodeVal}>{member.inviteCode || "N/A"}</Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          Clipboard.setString(member.inviteCode);
+                          Alert.alert("Copied 📋", "Invite code copied to clipboard.");
+                        }}
+                        style={styles.copyBtnSmall}
+                      >
+                        <Feather name="copy" size={13} color={Colors.primaryLight} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleShareWhatsApp(member)}
+                        style={styles.copyBtnSmall}
+                      >
+                        <Feather name="share-2" size={13} color={Colors.success} />
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.expiryRow}>
                       <Text style={[
-                        styles.restrictBtnText,
-                        { color: member.role === "restricted" ? Colors.warning : Colors.textSecondary }
+                        styles.expiryText,
+                        getExpirationText(member.inviteCodeExpiresAt) === "Expired" && { color: Colors.error }
                       ]}>
-                        {member.role === "restricted" ? "Unrestrict" : "Restrict"}
+                        ⏳ {getExpirationText(member.inviteCodeExpiresAt)}
                       </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      onPress={() => handleDeleteStaff(member)}
-                      style={styles.deleteBtn}
-                      activeOpacity={0.8}
-                    >
-                      <Feather name="trash-2" size={18} color={Colors.error} />
-                    </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleRegenerateInviteCode(member.id)}
+                        style={styles.regenerateBtn}
+                      >
+                        <Feather name="refresh-cw" size={12} color={Colors.primaryLight} />
+                        <Text style={styles.regenerateBtnText}>Regenerate</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 )}
               </View>
@@ -345,6 +431,56 @@ const ManageStaffScreen = ({ navigation }) => {
               isLoading={isSubmitting}
               variant="success"
               style={styles.modalConfirmBtn}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Invite Code Success Modal */}
+      <Modal visible={!!newStaffDetails} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.successHeader}>
+              <View style={styles.successIconCircle}>
+                <Feather name="check" size={28} color={Colors.success} />
+              </View>
+              <Text style={styles.successTitle}>Staff Invited Successfully!</Text>
+              <Text style={styles.successSub}>Share this invite code with {newStaffDetails?.name} to activate their account</Text>
+            </View>
+
+            <View style={styles.inviteCodeShowcase}>
+              <Text style={styles.showcaseCode}>{newStaffDetails?.inviteCode}</Text>
+              <Text style={styles.showcaseExpiry}>
+                ⏳ Valid for 48 Hours ({newStaffDetails?.inviteCodeExpiresAt ? new Date(newStaffDetails.inviteCodeExpiresAt).toLocaleString() : ""})
+              </Text>
+            </View>
+
+            <View style={styles.successActionWrapper}>
+              <TouchableOpacity
+                onPress={() => {
+                  Clipboard.setString(newStaffDetails?.inviteCode);
+                  Alert.alert("Copied 📋", "Invite code copied to clipboard.");
+                }}
+                style={[styles.actionBtn, styles.copyActionBtn]}
+              >
+                <Feather name="copy" size={16} color={Colors.white} style={{ marginRight: 6 }} />
+                <Text style={styles.actionBtnText}>Copy Code</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => handleShareWhatsApp(newStaffDetails)}
+                style={[styles.actionBtn, styles.shareActionBtn]}
+              >
+                <Feather name="share-2" size={16} color={Colors.white} style={{ marginRight: 6 }} />
+                <Text style={styles.actionBtnText}>WhatsApp Share</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Button
+              title="Done"
+              onPress={() => setNewStaffDetails(null)}
+              variant="primary"
+              style={styles.doneBtn}
             />
           </View>
         </View>
@@ -438,13 +574,15 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 100,
   },
-  staffCard: {
+  staffCardWrapper: {
     backgroundColor: Colors.bgCard,
     borderRadius: 20,
-    padding: 16,
     borderWidth: 1,
     borderColor: Colors.borderLight,
     marginBottom: 12,
+    padding: 16,
+  },
+  staffCard: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -495,6 +633,9 @@ const styles = StyleSheet.create({
   staffBadge: {
     backgroundColor: Colors.successBg,
   },
+  pendingBadge: {
+    backgroundColor: "rgba(255, 160, 0, 0.15)",
+  },
   restrictedBadge: {
     backgroundColor: Colors.warningBg,
   },
@@ -507,6 +648,9 @@ const styles = StyleSheet.create({
   },
   staffBadgeText: {
     color: Colors.primaryLight,
+  },
+  pendingBadgeText: {
+    color: Colors.warning,
   },
   restrictedBadgeText: {
     color: Colors.warning,
@@ -607,6 +751,139 @@ const styles = StyleSheet.create({
   modalConfirmBtn: {
     marginTop: 10,
     paddingVertical: 14,
+  },
+  inviteCodeContainer: {
+    marginTop: 12,
+    backgroundColor: Colors.bgInput,
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  codeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  inviteCodeLabel: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    fontWeight: "700",
+  },
+  inviteCodeVal: {
+    fontSize: 14,
+    color: Colors.primaryLight,
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  copyBtnSmall: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  expiryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 2,
+  },
+  expiryText: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    fontWeight: "600",
+  },
+  regenerateBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.bgElevated,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  regenerateBtnText: {
+    fontSize: 11,
+    color: Colors.primaryLight,
+    fontWeight: "700",
+    marginLeft: 4,
+  },
+  successHeader: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  successIconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: Colors.successBg,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  successTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: Colors.white,
+    marginBottom: 4,
+  },
+  successSub: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    paddingHorizontal: 10,
+    lineHeight: 18,
+  },
+  inviteCodeShowcase: {
+    backgroundColor: Colors.bgInput,
+    borderRadius: 16,
+    padding: 20,
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    marginBottom: 20,
+  },
+  showcaseCode: {
+    fontSize: 24,
+    color: Colors.primaryLight,
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontWeight: "800",
+    letterSpacing: 1.5,
+    marginBottom: 8,
+  },
+  showcaseExpiry: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    fontWeight: "600",
+  },
+  successActionWrapper: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 16,
+  },
+  actionBtn: {
+    flex: 1,
+    flexDirection: "row",
+    height: 48,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  copyActionBtn: {
+    backgroundColor: Colors.bgElevated,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  shareActionBtn: {
+    backgroundColor: Colors.success,
+  },
+  actionBtnText: {
+    color: Colors.white,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  doneBtn: {
+    marginTop: 10,
   },
 });
 

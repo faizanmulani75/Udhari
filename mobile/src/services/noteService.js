@@ -1,7 +1,7 @@
 // src/services/noteService.js
 // API calls for transaction notes and dispute discussion threads.
 
-import api from "./api";
+import api from "./apiClient";
 
 /**
  * Get all notes/comments for a transaction.
