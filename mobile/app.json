@@ -16,8 +16,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.udharitracker",
       "infoPlist": {
-        "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to use speech recognition.",
-        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use the microphone."
+        "NSSpeechRecognitionUsageDescription": "Udhari Khata needs speech recognition access to parse voice entry.",
+        "NSMicrophoneUsageDescription": "Udhari Khata needs microphone access for voice entry of items."
       }
     },
     "android": {
@@ -56,6 +56,12 @@
         }
       ],
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "1d1be6a8-4b7f-4e79-9599-863369e752fd"
+      }
+    },
+    "owner": "faizanmulanis-team"
   }
 }

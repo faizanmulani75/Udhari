@@ -4,6 +4,7 @@
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 import api from "./api";
 
 // Configure foreground notifications behavior (show alert, play sound, show badge)
@@ -43,9 +44,11 @@ export const registerForPushNotificationsAsync = async () => {
     }
 
     // Get the Expo Push Token
-    // Note: projectId is required for Expo Go and EAS builds
-    // For local dev, we don't strictly need EAS credentials if running on Expo Go, but passing projectId if available is recommended.
-    const tokenData = await Notifications.getExpoPushTokenAsync();
+    
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId || Constants.easConfig?.projectId;
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId,
+    });
     token = tokenData.data;
     console.log("📱 Retrieved Expo Push Token:", token);
 

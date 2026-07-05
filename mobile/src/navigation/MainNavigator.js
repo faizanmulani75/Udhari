@@ -48,7 +48,6 @@ const SettingsStackNavigator = () => {
       <SettingsStack.Screen name="Subscription" component={SubscriptionScreen} />
       <SettingsStack.Screen name="ManageStaff" component={ManageStaffScreen} />
       <SettingsStack.Screen name="AuditLog" component={AuditLogScreen} />
-      <SettingsStack.Screen name="PendingClaims" component={PendingClaimsScreen} />
       {/* <SettingsStack.Screen name="ReminderHistory" component={ReminderHistoryScreen} /> */}
     </SettingsStack.Navigator>
   );
@@ -184,6 +183,11 @@ const MainNavigator = () => {
       <RootStack.Screen
         name="GlobalTransactionsScreen"
         component={GlobalTransactionsScreen}
+        options={{ animation: "slide_from_right" }}
+      />
+      <RootStack.Screen
+        name="PendingClaims"
+        component={PendingClaimsScreen}
         options={{ animation: "slide_from_right" }}
       />
     </RootStack.Navigator>
