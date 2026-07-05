@@ -33,7 +33,16 @@ const Button = ({
       {isLoading ? (
         <ActivityIndicator color={variant === "outline" ? Colors.primary : Colors.white} size="small" />
       ) : (
-        <Text style={[styles.text, styles[`text_${variant}`], textStyle]}>{title}</Text>
+        <Text
+          style={[
+            styles.text,
+            styles[`text_${variant}`],
+            isButtonDisabled && styles.text_disabled,
+            textStyle,
+          ]}
+        >
+          {title}
+        </Text>
       )}
     </TouchableOpacity>
   );
@@ -51,44 +60,30 @@ const styles = StyleSheet.create({
   },
   primary: {
     backgroundColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 6,
   },
   secondary: {
     backgroundColor: Colors.bgElevated,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
   error: {
     backgroundColor: Colors.error,
-    shadowColor: Colors.error,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
   },
   outline: {
     backgroundColor: "transparent",
-    borderWidth: 1.5,
+    borderWidth: 0.5,
     borderColor: Colors.primary,
   },
   success: {
     backgroundColor: Colors.success,
-    shadowColor: Colors.success,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 6,
   },
   disabled: {
-    opacity: 0.5,
+    backgroundColor: Colors.bgElevated,
+    borderColor: "transparent",
   },
   text: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 15,
-    fontWeight: "700",
   },
   text_primary: {
     color: Colors.white,
@@ -100,10 +95,13 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   text_outline: {
-    color: Colors.primaryLight,
+    color: Colors.primary,
   },
   text_success: {
     color: Colors.white,
+  },
+  text_disabled: {
+    color: Colors.textMuted,
   },
 });
 

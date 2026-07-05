@@ -18,5 +18,6 @@ router.post("/staff/activate", authController.activateStaffAccount);
 
 // Protected routes
 router.get("/me", authMiddleware, authController.getProfile);
+router.post("/push-token", authMiddleware, authController.updatePushToken);
 
 module.exports = router;

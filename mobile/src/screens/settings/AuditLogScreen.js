@@ -20,32 +20,58 @@ import { Feather } from "@expo/vector-icons";
 import Colors from "../../constants/colors";
 import { getAuditLogs } from "../../services/auditService";
 
-const getLogIcon = (action) => {
+const getActionLabel = (action, details) => {
   switch (action) {
     case "CREATE_TRANSACTION":
-      return { name: "plus-circle", color: Colors.primaryLight };
+      return details && details.toLowerCase().includes("payment") ? "Payment Received" : "Credit Added";
     case "REVERSE_TRANSACTION":
-      return { name: "rotate-ccw", color: Colors.error };
+      return "Transaction Reversed";
     case "CREATE_CUSTOMER":
-      return { name: "user-plus", color: Colors.primary };
+      return "Grahak Registered";
     case "UPDATE_CUSTOMER":
-      return { name: "edit-2", color: Colors.accentLight };
+      return "Profile Updated";
     case "DELETE_CUSTOMER":
-      return { name: "user-minus", color: Colors.error };
+      return "Grahak Deleted";
     case "INVITE_STAFF":
-      return { name: "mail", color: Colors.primaryLight };
+      return "Staff Invited";
     case "UPDATE_STAFF":
-      return { name: "shield", color: Colors.accent };
+      return "Staff Role Updated";
     case "REMOVE_STAFF":
-      return { name: "user-x", color: Colors.error };
+      return "Staff Removed";
     default:
-      return { name: "file-text", color: Colors.textSecondary };
+      return action.replace(/_/g, " ");
+  }
+};
+
+const getLogIcon = (action, details) => {
+  const isCoral = action.includes("REVERSE") || action.includes("DELETE") || action.includes("REMOVE") || (details && details.toLowerCase().includes("payment"));
+  const color = isCoral ? Colors.error : Colors.primary;
+  
+  switch (action) {
+    case "CREATE_TRANSACTION":
+      return { name: details && details.toLowerCase().includes("payment") ? "arrow-down-left" : "arrow-up-right", color };
+    case "REVERSE_TRANSACTION":
+      return { name: "rotate-ccw", color };
+    case "CREATE_CUSTOMER":
+      return { name: "user-plus", color };
+    case "UPDATE_CUSTOMER":
+      return { name: "edit-2", color };
+    case "DELETE_CUSTOMER":
+      return { name: "user-minus", color };
+    case "INVITE_STAFF":
+      return { name: "mail", color };
+    case "UPDATE_STAFF":
+      return { name: "shield", color };
+    case "REMOVE_STAFF":
+      return { name: "user-x", color };
+    default:
+      return { name: "file-text", color };
   }
 };
 
 // Memoized Audit Log Card to prevent stuttering
 const AuditLogCard = React.memo(({ item }) => {
-  const iconData = getLogIcon(item.action);
+  const iconData = getLogIcon(item.action, item.details);
   const dateStr = new Date(item.createdAt).toLocaleString(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
@@ -53,19 +79,21 @@ const AuditLogCard = React.memo(({ item }) => {
 
   return (
     <View style={styles.logCard}>
-      <View style={styles.iconContainer}>
-        <Feather name={iconData.name} size={18} color={iconData.color} />
+      <View style={[styles.iconContainer, { backgroundColor: iconData.color + "12" }]}>
+        <Feather name={iconData.name} size={16} color={iconData.color} />
       </View>
       <View style={styles.logDetails}>
         <View style={styles.logHeader}>
           <Text style={styles.operatorText}>
             {item.userName}{" "}
-            <Text style={styles.roleText}>({item.userRole.toUpperCase()})</Text>
+            <Text style={styles.roleText}>({item.userRole.toLowerCase()})</Text>
           </Text>
           <Text style={styles.timeText}>{dateStr}</Text>
         </View>
         <Text style={styles.detailsText}>{item.details}</Text>
-        <Text style={styles.actionTag}>{item.action}</Text>
+        <Text style={[styles.actionTag, { color: iconData.color, backgroundColor: iconData.color + "12" }]}>
+          {getActionLabel(item.action, item.details)}
+        </Text>
       </View>
     </View>
   );
@@ -140,15 +168,15 @@ const AuditLogScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Feather name="arrow-left" size={24} color={Colors.white} />
+          <Feather name="arrow-left" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <Text style={styles.headerTitle}>Audit Trails</Text>
+          <Text style={styles.headerTitle}>Activity Log</Text>
           <Text style={styles.headerSubtitle}>Immutable log of staff and ledger activities</Text>
         </View>
       </View>
@@ -229,11 +257,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: Colors.white,
+    fontFamily: "PlusJakartaSans_500Medium",
+    fontSize: 19,
+    color: Colors.textPrimary,
   },
   headerSubtitle: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 12,
     color: Colors.textSecondary,
     marginTop: 2,
@@ -246,7 +275,7 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     paddingHorizontal: 12,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     height: 44,
   },
@@ -254,8 +283,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   searchInput: {
+    fontFamily: "Manrope_400Regular",
     flex: 1,
-    color: Colors.white,
+    color: Colors.textPrimary,
     fontSize: 14,
     height: "100%",
   },
@@ -266,12 +296,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 16,
-    fontWeight: "600",
-    color: Colors.white,
+    color: Colors.textPrimary,
     marginTop: 16,
   },
   emptyText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 14,
     color: Colors.textSecondary,
     textAlign: "center",
@@ -287,14 +318,13 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   iconContainer: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -309,30 +339,30 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   operatorText: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 14,
-    fontWeight: "600",
-    color: Colors.white,
+    color: Colors.textPrimary,
   },
   roleText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 10,
-    fontWeight: "600",
-    color: Colors.primaryLight,
+    color: Colors.primary,
   },
   timeText: {
-    fontSize: 11,
-    color: Colors.textMuted,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    color: Colors.textSecondary, // 12px muted secondary
   },
   detailsText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 13,
     color: Colors.textSecondary,
     lineHeight: 18,
     marginBottom: 6,
   },
   actionTag: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 10,
-    fontWeight: "700",
-    color: Colors.textMuted,
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
     alignSelf: "flex-start",
     paddingHorizontal: 6,
     paddingVertical: 2,

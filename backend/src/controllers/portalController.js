@@ -69,9 +69,35 @@ const createCustomerPortalDispute = catchAsync(async (req, res) => {
   return ApiResponse.created(res, "Dispute raised successfully", note);
 });
 
+/**
+ * POST /api/v1/portal/:token/pay/claim
+ * Customer claims a UPI payment has been sent.
+ */
+const createPaymentClaim = catchAsync(async (req, res) => {
+  const { token } = req.params;
+  const { amount, txnRef } = req.body;
+
+  const claim = await portalService.createPaymentClaim(token, parseFloat(amount), txnRef);
+
+  return ApiResponse.created(res, "Payment claim submitted for verification", claim);
+});
+
+/**
+ * GET /api/v1/portal/:token/pay/claims
+ * Retrieve recent payment claims from public portal.
+ */
+const getCustomerClaims = catchAsync(async (req, res) => {
+  const { token } = req.params;
+  const claims = await portalService.getCustomerClaims(token);
+
+  return ApiResponse.success(res, "Payment claims retrieved successfully", claims);
+});
+
 module.exports = {
   getCustomerPortalData,
   getCustomerPortalTransactions,
   getCustomerPortalPDF,
   createCustomerPortalDispute,
+  createPaymentClaim,
+  getCustomerClaims,
 };

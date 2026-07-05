@@ -254,12 +254,24 @@ const CustomerListScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
 
       {/* Summary Header */}
       <View style={styles.summaryHeader}>
         <Text style={styles.summaryTitle}>Total Udhari (Lene Hain)</Text>
-        <Text style={styles.summaryValue}>
+        <Text
+          style={[
+            styles.summaryValue,
+            {
+              color:
+                totalOutstanding > 0
+                  ? Colors.error
+                  : totalOutstanding < 0
+                  ? Colors.primary
+                  : Colors.textPrimary,
+            },
+          ]}
+        >
           {formatCurrency(totalOutstanding, currencyCode)}
         </Text>
         <Text style={styles.summarySubtitle}>
@@ -373,24 +385,26 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     paddingHorizontal: 20,
     alignItems: "center",
-    borderBottomWidth: 1,
-    borderColor: Colors.borderLight,
+    borderBottomWidth: 0.5,
+    borderColor: Colors.border,
   },
   summaryTitle: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 13,
-    fontWeight: "700",
     color: Colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 1,
     marginBottom: 6,
   },
   summaryValue: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 32,
-    fontWeight: "800",
+    fontWeight: "500",
     color: Colors.white,
     marginBottom: 4,
   },
   summarySubtitle: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 12,
     color: Colors.textMuted,
   },
@@ -399,13 +413,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   searchInput: {
-    backgroundColor: Colors.bgInput,
+    fontFamily: "Manrope_400Regular",
+    backgroundColor: Colors.bgCard, // Neutral card bg
     borderRadius: 14,
     color: Colors.textPrimary,
     paddingVertical: 12,
     paddingHorizontal: 16,
     fontSize: 15,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
   listContainer: {
@@ -417,13 +432,8 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     padding: 18,
     marginBottom: 14,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 4,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   cardHeader: {
     flexDirection: "row",
@@ -437,24 +447,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
-    borderWidth: 1,
-    borderColor: "rgba(108, 92, 231, 0.2)",
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   avatarText: {
-    color: Colors.primaryLight,
-    fontWeight: "700",
+    fontFamily: "PlusJakartaSans_500Medium",
+    color: Colors.primary,
     fontSize: 15,
   },
   infoContainer: {
     flex: 1,
   },
   customerName: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 16,
-    fontWeight: "700",
     color: Colors.textPrimary,
     marginBottom: 4,
   },
   customerPhone: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 12,
     color: Colors.textSecondary,
   },
@@ -469,10 +480,12 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   balanceText: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "500",
   },
   balanceLabel: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 10,
     color: Colors.textMuted,
     marginTop: 2,
@@ -480,25 +493,26 @@ const styles = StyleSheet.create({
   },
   limitBarWrapper: {
     marginTop: 14,
-    borderTopWidth: 1,
-    borderColor: Colors.borderLight,
+    borderTopWidth: 0.5,
+    borderColor: Colors.border,
     paddingTop: 10,
   },
   limitBarHeader: {
     flexDirection: "row",
-    justifyContent: "between",
+    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 6,
   },
   limitBarText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
     color: Colors.textMuted,
     flex: 1,
   },
   limitPercentText: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 11,
     color: Colors.textSecondary,
-    fontWeight: "600",
   },
   progressBackground: {
     height: 5,
@@ -521,14 +535,9 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.primary, // Teal fill
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 8,
   },
   fabText: {
     color: Colors.white,
@@ -550,22 +559,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     backgroundColor: Colors.bgCard,
   },
   tagChipActive: {
-    backgroundColor: Colors.primaryGlow,
-    borderColor: Colors.primary,
+    backgroundColor: "transparent", // Active = no bg tint
+    borderColor: Colors.primary,   // Teal border active
   },
   tagChipText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 13,
     color: Colors.textSecondary,
-    fontWeight: "600",
   },
   tagChipTextActive: {
-    color: Colors.primaryLight,
-    fontWeight: "700",
+    color: Colors.primary, // Teal text active
+    fontFamily: "Manrope_500Medium",
   },
   tagChipDot: {
     width: 6,
@@ -583,11 +592,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2.5,
     borderRadius: 6,
-    borderWidth: 1,
+    borderWidth: 0.5,
   },
   cardTagBadgeText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 10,
-    fontWeight: "700",
   },
 });
 

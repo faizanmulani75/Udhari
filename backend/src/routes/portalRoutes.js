@@ -20,5 +20,9 @@ router.get("/:token/pdf", portalController.getCustomerPortalPDF);
 // Dispute a transaction
 router.post("/:token/transactions/:transactionId/disputes", portalController.createCustomerPortalDispute);
 
+// UPI Intent claims
+router.post("/:token/pay/claim", portalController.createPaymentClaim);
+router.get("/:token/pay/claims", portalController.getCustomerClaims);
+
 module.exports = router;
 

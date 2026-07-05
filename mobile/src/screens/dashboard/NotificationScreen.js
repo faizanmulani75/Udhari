@@ -18,13 +18,13 @@ import { Feather } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import Colors from "../../constants/colors";
 import useNotificationStore from "../../store/notificationStore";
-import CustomAlert from "../../components/common/CustomAlert";
+import { customAlert } from "../../components/common/CustomAlert";
 
 // ── Type Config ────────────────────────────────────────────
 const TYPE_CONFIG = {
   TRANSACTION: { icon: "credit-card", color: Colors.primary,   bg: Colors.primaryGlow },
   DISPUTE:     { icon: "alert-circle", color: Colors.error,    bg: Colors.errorBg },
-  STAFF:       { icon: "users",        color: Colors.accent,   bg: "rgba(255,142,37,0.12)" },
+  STAFF:       { icon: "users",        color: Colors.accentText,   bg: Colors.accentLight },
   SYSTEM:      { icon: "bell",         color: Colors.textSecondary, bg: "rgba(164,164,180,0.10)" },
 };
 
@@ -140,8 +140,6 @@ const NotificationScreen = ({ navigation }) => {
     clearReadNotifications,
   } = useNotificationStore();
 
-  const [alertConfig, setAlertConfig] = useState(null);
-
   useFocusEffect(
     useCallback(() => {
       fetchNotifications(1);
@@ -156,43 +154,37 @@ const NotificationScreen = ({ navigation }) => {
   };
 
   const handleMarkAllRead = () => {
-    setAlertConfig({
-      visible: true,
-      title: "Mark All as Read",
-      message: "Mark all notifications as read?",
-      type: "info",
-      actions: [
-        { text: "Cancel", style: "cancel", onPress: () => setAlertConfig(null) },
+    customAlert(
+      "Mark All as Read",
+      "Mark all notifications as read?",
+      [
+        { text: "Cancel", style: "cancel" },
         {
           text: "Mark All",
           style: "primary",
           onPress: () => {
-            setAlertConfig(null);
             markAllAsRead();
           },
         },
-      ],
-    });
+      ]
+    );
   };
 
   const handleClearRead = () => {
-    setAlertConfig({
-      visible: true,
-      title: "Clear Read Notifications",
-      message: "Remove all read notifications from your list?",
-      type: "warning",
-      actions: [
-        { text: "Cancel", style: "cancel", onPress: () => setAlertConfig(null) },
+    customAlert(
+      "Clear Read Notifications",
+      "Remove all read notifications from your list?",
+      [
+        { text: "Cancel", style: "cancel" },
         {
           text: "Clear",
           style: "destructive",
           onPress: () => {
-            setAlertConfig(null);
             clearReadNotifications();
           },
         },
-      ],
-    });
+      ]
+    );
   };
 
   const grouped = groupByDate(notifications);
@@ -243,12 +235,12 @@ const NotificationScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Feather name="arrow-left" size={22} color={Colors.white} />
+          <Feather name="arrow-left" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
 
         <View style={styles.headerTitle}>
@@ -310,18 +302,6 @@ const NotificationScreen = ({ navigation }) => {
           }
         />
       )}
-
-      {/* Custom Alert */}
-      {alertConfig && (
-        <CustomAlert
-          visible={alertConfig.visible}
-          title={alertConfig.title}
-          message={alertConfig.message}
-          type={alertConfig.type}
-          actions={alertConfig.actions}
-          onClose={() => setAlertConfig(null)}
-        />
-      )}
     </SafeAreaView>
   );
 };
@@ -338,7 +318,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderBottomColor: Colors.border,
   },
   backBtn: {
@@ -348,7 +328,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bgCard,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
   headerTitle: {
@@ -358,8 +338,8 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   headerText: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 20,
-    fontWeight: "700",
     color: Colors.textPrimary,
     letterSpacing: 0.3,
   },
@@ -374,8 +354,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   headerBadgeText: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 11,
-    fontWeight: "800",
     color: Colors.bgDark,
   },
   headerActions: {
@@ -389,7 +369,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bgCard,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
 
@@ -401,10 +381,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     backgroundColor: Colors.bgCard,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderBottomColor: Colors.border,
   },
   hintText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
     color: Colors.textMuted,
     flex: 1,
@@ -420,8 +401,8 @@ const styles = StyleSheet.create({
 
   // ── Section Header ──────────────────────────────────────
   sectionHeader: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 12,
-    fontWeight: "700",
     color: Colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 1.2,
@@ -438,18 +419,13 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
     marginBottom: 10,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     position: "relative",
   },
   cardUnread: {
     borderColor: "rgba(5,213,154,0.25)",
-    backgroundColor: "#121F1A",
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    backgroundColor: Colors.primaryLight,
   },
   unreadDot: {
     position: "absolute",
@@ -480,22 +456,23 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   cardTitle: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 14,
-    fontWeight: "600",
     color: Colors.textSecondary,
     flex: 1,
     marginRight: 8,
   },
   cardTitleUnread: {
     color: Colors.textPrimary,
-    fontWeight: "700",
   },
   cardTime: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
     color: Colors.textMuted,
     flexShrink: 0,
   },
   cardMessage: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 13,
     color: Colors.textSecondary,
     lineHeight: 18,
@@ -509,8 +486,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryGlow,
   },
   markReadText: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 11,
-    fontWeight: "700",
     color: Colors.primary,
   },
   deleteBtn: {
@@ -533,6 +510,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 14,
     color: Colors.textMuted,
   },
@@ -553,17 +531,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 20,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
   emptyTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    fontWeight: "700",
     color: Colors.textPrimary,
     marginBottom: 8,
     textAlign: "center",
   },
   emptySubtitle: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 13,
     color: Colors.textMuted,
     textAlign: "center",

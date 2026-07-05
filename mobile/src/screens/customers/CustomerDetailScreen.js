@@ -60,9 +60,9 @@ const CustomerDetailScreen = ({ route, navigation }) => {
   const [selectedTagIds, setSelectedTagIds] = useState([]);
   const [isSavingTags, setIsSavingTags] = useState(false);
   const [newTagName, setNewTagName] = useState("");
-  const [newTagColor, setNewTagColor] = useState("#6366F1");
+  const [newTagColor, setNewTagColor] = useState("#10B981");
 
-  const tagColorOptions = ["#6366F1", "#EF4444", "#10B981", "#F59E0B", "#EC4899", "#8B5CF6", "#06B6D4"];
+  const tagColorOptions = ["#10B981", "#F59E0B", "#F43F5E", "#E07A5F", "#878680", "#2D2B27"];
 
   const openTagsModal = async () => {
     try {
@@ -242,7 +242,7 @@ const CustomerDetailScreen = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
 
       {/* Header Bar */}
       <View style={styles.headerBar}>
@@ -266,35 +266,36 @@ const CustomerDetailScreen = ({ route, navigation }) => {
         )}
 
         {/* Profile Card */}
-        <LinearGradient
-          colors={
-            isNegative
-              ? ["rgba(5, 213, 154, 0.08)", "rgba(18, 18, 23, 0.5)"] // Emerald glow gradient
-              : balance > 0
-              ? ["rgba(255, 74, 90, 0.08)", "rgba(18, 18, 23, 0.5)"] // Coral glow gradient
-              : ["#121217", "#121217"]
-          }
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={styles.profileCard}
+        <View
+          style={[
+            styles.profileCard,
+            {
+              backgroundColor: isNegative ? Colors.primaryLight : balance > 0 ? Colors.errorBg : Colors.bgCard,
+              borderColor: "transparent",
+            }
+          ]}
         >
-          <View style={styles.avatarLarge}>
-            <Text style={styles.avatarLargeText}>
+          <View style={[styles.avatarLarge, { backgroundColor: isNegative ? "rgba(4, 52, 44, 0.1)" : balance > 0 ? "rgba(113, 43, 19, 0.1)" : Colors.primaryGlow }]}>
+            <Text style={[styles.avatarLargeText, { color: isNegative ? "#04342C" : balance > 0 ? "#712B13" : Colors.primary }]}>
               {selectedCustomer.name.substring(0, 2).toUpperCase()}
             </Text>
           </View>
-          <Text style={styles.nameText}>{selectedCustomer.name}</Text>
+          <Text style={[styles.nameText, { color: isNegative ? "#04342C" : balance > 0 ? "#4A1B0C" : Colors.textPrimary }]}>
+            {selectedCustomer.name}
+          </Text>
           
-          <View style={[styles.badge, isNegative ? styles.badgeSuccess : styles.badgeError]}>
-            <Text style={[styles.badgeText, { color: balanceColor }]}>
+          <View style={[styles.badge, { backgroundColor: isNegative ? "rgba(4, 52, 44, 0.1)" : balance > 0 ? "rgba(113, 43, 19, 0.1)" : Colors.neutralGray }]}>
+            <Text style={[styles.badgeText, { color: isNegative ? "#085041" : balance > 0 ? "#712B13" : Colors.textPrimary }]}>
               {isNegative ? "Advance (Jama)" : "Udhari (Due)"}
             </Text>
           </View>
 
           {/* Balance Block */}
           <View style={styles.balanceBlock}>
-            <Text style={styles.balanceSub}>{balanceLabel}</Text>
-            <Text style={[styles.balanceValue, { color: balanceColor }]}>
+            <Text style={[styles.balanceSub, { color: isNegative ? "#085041" : balance > 0 ? "#712B13" : Colors.textSecondary }]}>
+              {balanceLabel}
+            </Text>
+            <Text style={[styles.balanceValue, { color: isNegative ? "#04342C" : balance > 0 ? "#4A1B0C" : Colors.textPrimary }]}>
               {formatCurrency(Math.abs(balance), currencyCode)}
             </Text>
           </View>
@@ -302,57 +303,86 @@ const CustomerDetailScreen = ({ route, navigation }) => {
           {/* Contact Row */}
           <View style={styles.contactRow}>
             <TouchableOpacity onPress={triggerCall} style={styles.contactBtn}>
-              <Feather name="phone" size={16} color={Colors.primaryLight} style={styles.contactIcon} />
+              <Feather name="phone" size={16} color={Colors.textSecondary} style={styles.contactIcon} />
               <Text style={styles.contactBtnText}>Call</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={triggerWhatsApp} style={styles.contactBtn}>
-              <Feather name="message-circle" size={16} color={Colors.success} style={styles.contactIcon} />
+              <Feather name="message-circle" size={16} color={Colors.textSecondary} style={styles.contactIcon} />
               <Text style={styles.contactBtnText}>WhatsApp</Text>
             </TouchableOpacity>
             {shop?.upiId && balance > 0 ? (
               <TouchableOpacity onPress={() => setShowPaymentQrModal(true)} style={styles.contactBtn}>
-                <Feather name="dollar-sign" size={16} color={Colors.accentLight} style={styles.contactIcon} />
+                <Feather name="dollar-sign" size={16} color={Colors.textSecondary} style={styles.contactIcon} />
                 <Text style={styles.contactBtnText}>UPI Pay</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity onPress={() => setShowQrModal(true)} style={styles.contactBtn}>
-                <Feather name="maximize" size={16} color={Colors.accent} style={styles.contactIcon} />
+                <Feather name="maximize" size={16} color={Colors.textSecondary} style={styles.contactIcon} />
                 <Text style={styles.contactBtnText}>Show QR</Text>
               </TouchableOpacity>
             )}
           </View>
-        </LinearGradient>
-
-        {/* Financial Actions */}
-        <View style={styles.actionBlock}>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.giveCreditBtn]}
-            onPress={() => navigation.navigate("AddTransactionScreen", { customerId, type: "CREDIT" })}
-          >
-            <Feather name="plus-circle" size={18} color={Colors.white} />
-            <Text style={styles.actionBtnText}>Diya (You Gave Udhari)</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.recordPaymentBtn]}
-            onPress={() => navigation.navigate("AddTransactionScreen", { customerId, type: "PAYMENT" })}
-          >
-            <Feather name="check-circle" size={18} color={Colors.white} />
-            <Text style={styles.actionBtnText}>Mila (You Got Payment)</Text>
-          </TouchableOpacity>
         </View>
 
-        {/* Statement Export Block */}
-        <View style={styles.exportBlock}>
-          <TouchableOpacity style={[styles.exportBtn, styles.pdfBtn]} onPress={handleExportPDF}>
-            <Feather name="file-text" size={16} color={Colors.white} style={styles.exportIcon} />
-            <Text style={styles.exportBtnText}>Download PDF Statement</Text>
-          </TouchableOpacity>
+        {/* Restructured Customer Quick Actions Dock */}
+        <View style={styles.actionBlock}>
+          {/* Give Credit */}
+          <View style={styles.actionCol}>
+            <TouchableOpacity
+              style={[styles.actionCircularBtn, { backgroundColor: Colors.error }]}
+              onPress={() => navigation.navigate("AddTransactionScreen", { customerId, type: "CREDIT" })}
+              activeOpacity={0.8}
+            >
+              <Feather name="minus" size={20} color={Colors.white} />
+            </TouchableOpacity>
+            <Text style={styles.actionColLabel}>Give Udhari</Text>
+          </View>
 
-          <TouchableOpacity style={[styles.exportBtn, styles.csvBtn]} onPress={handleExportCSV}>
-            <Feather name="grid" size={16} color={Colors.white} style={styles.exportIcon} />
-            <Text style={styles.exportBtnText}>Download CSV Statement</Text>
-          </TouchableOpacity>
+          {/* Got Payment */}
+          <View style={styles.actionCol}>
+            <TouchableOpacity
+              style={[styles.actionCircularBtn, { backgroundColor: Colors.primary }]}
+              onPress={() => navigation.navigate("AddTransactionScreen", { customerId, type: "PAYMENT" })}
+              activeOpacity={0.8}
+            >
+              <Feather name="plus" size={20} color={Colors.white} />
+            </TouchableOpacity>
+            <Text style={styles.actionColLabel}>Got Payment</Text>
+          </View>
+
+          {/* Send Reminder */}
+          <View style={styles.actionCol}>
+            <TouchableOpacity
+              style={[styles.actionCircularBtn, { backgroundColor: Colors.accent }]}
+              onPress={triggerWhatsApp}
+              activeOpacity={0.8}
+            >
+              <Feather name="bell" size={20} color={Colors.white} />
+            </TouchableOpacity>
+            <Text style={styles.actionColLabel}>Remind</Text>
+          </View>
+
+          {/* Download Statement */}
+          <View style={styles.actionCol}>
+            <TouchableOpacity
+              style={[styles.actionCircularBtn, { backgroundColor: Colors.bgElevated }]}
+              onPress={() => {
+                Alert.alert(
+                  "Download Statement",
+                  "Choose a format to export this customer's ledger history:",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Excel / CSV", onPress: handleExportCSV },
+                    { text: "PDF Statement", onPress: handleExportPDF }
+                  ]
+                );
+              }}
+              activeOpacity={0.8}
+            >
+              <Feather name="file-text" size={20} color={Colors.textPrimary} />
+            </TouchableOpacity>
+            <Text style={[styles.actionColLabel, { color: Colors.textPrimary }]}>Statement</Text>
+          </View>
         </View>
 
         {/* Info Fields */}
@@ -435,7 +465,7 @@ const CustomerDetailScreen = ({ route, navigation }) => {
               const typeSymbol = isCredit ? "+" : "-";
 
               return (
-                <View key={txn.id} style={styles.txnRow}>
+                <View key={txn.id} style={[styles.txnRow, { borderLeftWidth: 4, borderLeftColor: isCredit ? Colors.error : Colors.primary, paddingLeft: 12, marginLeft: -12 }]}>
                   <View style={styles.txnInfo}>
                     <Text style={styles.txnType}>
                       {txn.type} {txn.paymentMethod ? `(${txn.paymentMethod})` : ""}
@@ -817,7 +847,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: Colors.white,
+    color: Colors.textPrimary,
   },
   editButton: {
     paddingVertical: 8,
@@ -826,7 +856,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bgElevated,
   },
   editButtonText: {
-    color: Colors.primaryLight,
+    color: Colors.primary,
     fontWeight: "700",
     fontSize: 14,
   },
@@ -853,8 +883,8 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 24,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     marginBottom: 16,
   },
   avatarLarge: {
@@ -864,18 +894,18 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryGlow,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(108, 92, 231, 0.2)",
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     marginBottom: 14,
   },
   avatarLargeText: {
-    color: Colors.primaryLight,
+    fontFamily: "PlusJakartaSans_500Medium",
+    color: Colors.primary,
     fontSize: 24,
-    fontWeight: "800",
   },
   nameText: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 22,
-    fontWeight: "800",
     color: Colors.white,
     marginBottom: 8,
   },
@@ -892,8 +922,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.errorBg,
   },
   badgeText: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 12,
-    fontWeight: "700",
     textTransform: "uppercase",
   },
   balanceBlock: {
@@ -901,6 +931,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   balanceSub: {
+    fontFamily: "Manrope_400Regular",
     color: Colors.textSecondary,
     fontSize: 12,
     textTransform: "uppercase",
@@ -908,14 +939,14 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   balanceValue: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 36,
-    fontWeight: "800",
   },
   contactRow: {
     flexDirection: "row",
     gap: 12,
-    borderTopWidth: 1,
-    borderColor: Colors.borderLight,
+    borderTopWidth: 0.5,
+    borderColor: Colors.border,
     paddingTop: 20,
     width: "100%",
   },
@@ -925,7 +956,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 12,
     alignItems: "center",
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
   contactIcon: {
@@ -933,55 +964,57 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   contactBtnText: {
+    fontFamily: "Manrope_500Medium",
     color: Colors.textPrimary,
     fontSize: 12,
-    fontWeight: "700",
   },
   actionBlock: {
     flexDirection: "row",
-    gap: 12,
+    justifyContent: "space-between",
+    backgroundColor: Colors.bgCard,
+    borderRadius: 24,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
     marginBottom: 20,
+    gap: 8,
   },
-  actionBtn: {
+  actionCol: {
     flex: 1,
-    borderRadius: 16,
-    paddingVertical: 18,
     alignItems: "center",
     justifyContent: "center",
-    flexDirection: "row",
-    gap: 8,
+  },
+  actionCircularBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  giveCreditBtn: {
-    backgroundColor: Colors.error,
-    shadowColor: Colors.error,
-  },
-  recordPaymentBtn: {
-    backgroundColor: Colors.success,
-    shadowColor: Colors.success,
-  },
-  actionBtnIcon: {
-    fontSize: 16,
-  },
-  actionBtnText: {
-    color: Colors.white,
-    fontSize: 15,
-    fontWeight: "800",
+  actionColLabel: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: 11,
+    color: Colors.textSecondary,
+    textAlign: "center",
   },
   infoCard: {
     backgroundColor: Colors.bgCard,
     borderRadius: 24,
     padding: 24,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     marginBottom: 20,
   },
   sectionTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 16,
-    fontWeight: "800",
     color: Colors.white,
     marginBottom: 16,
   },
@@ -989,17 +1022,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: Colors.borderLight,
+    borderBottomWidth: 0.5,
+    borderColor: Colors.border,
   },
   infoLabel: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 14,
     color: Colors.textSecondary,
   },
   infoValue: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 14,
     color: Colors.textPrimary,
-    fontWeight: "600",
     maxWidth: "60%",
     textAlign: "right",
   },
@@ -1007,8 +1041,8 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 142, 37, 0.07)",
     borderRadius: 16,
     padding: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255, 142, 37, 0.18)",
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     marginBottom: 16,
   },
   notesHeader: {
@@ -1017,13 +1051,14 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   notesLabel: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 11,
-    fontWeight: "800",
-    color: Colors.accentLight,
+    color: Colors.accent,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   notesText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 13.5,
     color: Colors.textSecondary,
     lineHeight: 18,
@@ -1032,8 +1067,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bgCard,
     borderRadius: 24,
     padding: 24,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     marginBottom: 24,
   },
   txnHeader: {
@@ -1043,14 +1078,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   viewAllText: {
-    color: Colors.primaryLight,
+    fontFamily: "Manrope_500Medium",
+    color: Colors.primary,
     fontSize: 13,
-    fontWeight: "700",
   },
   txnLoader: {
     paddingVertical: 16,
   },
   emptyTxnText: {
+    fontFamily: "Manrope_400Regular",
     color: Colors.textMuted,
     fontSize: 14,
     textAlign: "center",
@@ -1061,25 +1097,27 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: Colors.borderLight,
+    borderBottomWidth: 0.5,
+    borderColor: Colors.border,
   },
   txnInfo: {
     flex: 1,
     paddingRight: 12,
   },
   txnType: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 14,
-    fontWeight: "700",
     color: Colors.textPrimary,
     marginBottom: 4,
   },
   txnDate: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
     color: Colors.textMuted,
     marginBottom: 4,
   },
   txnDesc: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 12,
     color: Colors.textSecondary,
   },
@@ -1087,10 +1125,11 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   txnAmountText: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 15,
-    fontWeight: "800",
   },
   txnBalanceAfter: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
     color: Colors.textMuted,
     marginTop: 2,
@@ -1100,15 +1139,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: "rgba(255, 107, 107, 0.2)",
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     backgroundColor: Colors.errorBg,
     marginTop: 8,
   },
   deleteBtnText: {
+    fontFamily: "PlusJakartaSans_500Medium",
     color: Colors.error,
     fontSize: 14,
-    fontWeight: "700",
   },
   modalOverlay: {
     flex: 1,
@@ -1120,8 +1159,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     padding: 28,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   modalHeader: {
     flexDirection: "row",
@@ -1130,8 +1169,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: "800",
+    fontFamily: "PlusJakartaSans_500Medium",
+    fontSize: 19,
     color: Colors.white,
   },
   closeModalBtn: {
@@ -1227,37 +1266,6 @@ const styles = StyleSheet.create({
   langOptionDesc: {
     fontSize: 12,
     color: Colors.textMuted,
-  },
-  exportBlock: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  exportBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  pdfBtn: {
-    backgroundColor: Colors.bgCard,
-    borderColor: Colors.border,
-  },
-  csvBtn: {
-    backgroundColor: Colors.bgCard,
-    borderColor: Colors.border,
-  },
-  exportIcon: {
-    marginRight: 8,
-  },
-  exportBtnText: {
-    color: Colors.white,
-    fontSize: 13,
-    fontWeight: "700",
   },
   infoTagsRow: {
     flexDirection: "row",

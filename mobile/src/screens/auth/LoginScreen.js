@@ -106,7 +106,7 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
 
       {/* Background glow orb */}
       <Animated.View style={[styles.glowOrb, { opacity: glowOpacity }]} />
@@ -262,8 +262,7 @@ const styles = StyleSheet.create({
     width: width * 0.8,
     height: width * 0.8,
     borderRadius: width * 0.4,
-    backgroundColor: Colors.primary,
-    opacity: 0.08,
+    backgroundColor: "transparent",
   },
   glowOrbSecondary: {
     position: "absolute",
@@ -272,8 +271,7 @@ const styles = StyleSheet.create({
     width: width * 0.6,
     height: width * 0.6,
     borderRadius: width * 0.3,
-    backgroundColor: Colors.accent,
-    opacity: 0.05,
+    backgroundColor: "transparent",
   },
   keyboardView: {
     flex: 1,
@@ -291,69 +289,68 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: Colors.primary,
+    backgroundColor: "#F5C4B3", // Coral tint bg
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 12,
   },
   logoText: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 36,
-    fontWeight: "700",
-    color: Colors.white,
+    fontWeight: "500",
+    color: "#D85A30", // Coral ₹ text
   },
   appName: {
-    fontSize: 32,
-    fontWeight: "800",
+    fontFamily: "PlusJakartaSans_500Medium",
+    fontSize: 28,
+    fontWeight: "500",
     color: Colors.textPrimary,
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   tagline: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 14,
     color: Colors.textSecondary,
     marginTop: 6,
-    letterSpacing: 0.3,
   },
   formContainer: {
     backgroundColor: Colors.bgCard,
     borderRadius: 24,
     padding: 24,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   formTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontFamily: "PlusJakartaSans_500Medium",
+    fontSize: 19,
+    fontWeight: "500",
     color: Colors.textPrimary,
     marginBottom: 6,
   },
   formSubtitle: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 14,
     color: Colors.textSecondary,
     marginBottom: 24,
-    lineHeight: 20,
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Colors.bgInput,
-    borderRadius: 16,
-    borderWidth: 1.5,
+    borderRadius: 14,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     paddingHorizontal: 16,
-    height: 56,
+    height: 54,
     marginBottom: 16,
   },
   inputFocused: {
-    borderColor: Colors.primaryLight,
+    borderColor: Colors.primary,
   },
   textInput: {
     flex: 1,
-    fontSize: 16,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 15,
     color: Colors.textPrimary,
   },
   eyeToggle: {
@@ -377,33 +374,27 @@ const styles = StyleSheet.create({
   },
   errorText: {
     flex: 1,
+    fontFamily: "Manrope_400Regular",
     fontSize: 13,
     color: Colors.error,
     lineHeight: 18,
   },
   button: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.bgElevated, // Neutral dark fill (#444441)
     height: 54,
-    borderRadius: 16,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
     marginVertical: 12,
   },
   buttonDisabled: {
-    backgroundColor: Colors.bgElevated,
-    shadowOpacity: 0,
-    elevation: 0,
+    opacity: 0.5,
   },
   buttonText: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 16,
-    fontWeight: "700",
-    color: Colors.white,
-    letterSpacing: 0.5,
+    fontWeight: "500",
+    color: Colors.textPrimary,
   },
   signupContainer: {
     alignItems: "center",
@@ -411,12 +402,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   signupText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 14,
     color: Colors.textSecondary,
   },
   signupLink: {
-    color: Colors.primaryLight,
-    fontWeight: "700",
+    fontFamily: "Manrope_500Medium",
+    color: Colors.primary, // Teal `#1D9E75`
+    fontWeight: "500",
   },
   joinContainer: {
     alignItems: "center",
@@ -424,12 +417,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   joinText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 14,
     color: Colors.textSecondary,
   },
   joinLink: {
-    color: Colors.primaryLight,
-    fontWeight: "700",
+    fontFamily: "Manrope_500Medium",
+    color: Colors.primary, // Teal `#1D9E75`
+    fontWeight: "500",
   },
 });
 

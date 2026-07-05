@@ -31,6 +31,7 @@ import useTransactionStore from "../../store/transactionStore";
 import useCustomerStore from "../../store/customerStore";
 import useNotificationStore from "../../store/notificationStore";
 import { LinearGradient } from "expo-linear-gradient";
+import api from "../../services/api";
 
 let ExpoSpeechRecognitionModule = null;
 let useSpeechRecognitionEvent = () => {};
@@ -72,6 +73,17 @@ const DashboardScreen = ({ navigation }) => {
   const { addCredit, addPayment } = useTransactionStore();
   const { createCustomer } = useCustomerStore();
   const { unreadCount, fetchUnreadCount } = useNotificationStore();
+  const [pendingClaimsCount, setPendingClaimsCount] = useState(0);
+
+  const fetchPendingClaimsCount = async () => {
+    try {
+      const response = await api.get("/payment-claims?status=PENDING_SHOP_CONFIRM");
+      const claims = response.data.data || [];
+      setPendingClaimsCount(claims.length);
+    } catch (error) {
+      console.warn("Failed to fetch pending claims count:", error);
+    }
+  };
 
   const [isNewCustomerModalVisible, setIsNewCustomerModalVisible] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState(null);
@@ -340,13 +352,14 @@ const DashboardScreen = ({ navigation }) => {
       fetchShop();
       checkPendingSync();
       fetchUnreadCount();
+      fetchPendingClaimsCount();
     }, [])
   );
 
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await checkPendingSync();
-    await Promise.all([fetchDashboard(), fetchShop()]);
+    await Promise.all([fetchDashboard(), fetchShop(), fetchPendingClaimsCount()]);
     setIsRefreshing(false);
   }, []);
 
@@ -360,29 +373,45 @@ const DashboardScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
 
       {/* Shop & Welcome Header */}
       <View style={styles.header}>
-        <View>
+        <View style={{ flex: 1, marginRight: 12 }}>
           <Text style={styles.greetingText}>
             {getGreeting()}, {user?.name || "Shopkeeper"} 👋
           </Text>
-          <Text style={styles.shopNameText}>{shop?.name || "My Business"}</Text>
+          <Text style={styles.shopNameText} numberOfLines={1}>{shop?.name || "My Business"}</Text>
         </View>
-        <TouchableOpacity 
-          style={styles.notificationBtn}
-          onPress={() => navigation.navigate("NotificationScreen")}
-        >
-          <Feather name="bell" size={20} color={unreadCount > 0 ? Colors.primary : Colors.white} />
-          {unreadCount > 0 && (
-            <View style={styles.notificationBadge}>
-              <Text style={styles.notificationBadgeText}>
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </Text>
-            </View>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {pendingClaimsCount > 0 && (
+            <TouchableOpacity 
+              style={styles.notificationBtn}
+              onPress={() => navigation.navigate("PendingClaims")}
+            >
+              <Feather name="shield" size={20} color={Colors.primary} />
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>
+                  {pendingClaimsCount}
+                </Text>
+              </View>
+            </TouchableOpacity>
           )}
-        </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.notificationBtn}
+            onPress={() => navigation.navigate("NotificationScreen")}
+          >
+            <Feather name="bell" size={20} color={unreadCount > 0 ? Colors.primary : Colors.textPrimary} />
+            {unreadCount > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -436,45 +465,14 @@ const DashboardScreen = ({ navigation }) => {
           </View>
         ) : (
           <>
-            {/* Stats Summary Cards */}
-            <View style={styles.statsRow}>
-              {/* Credit Outstanding */}
-              <View style={[styles.statCard, styles.creditCard]}>
-                <View style={styles.statHeaderRow}>
-                  <Text style={styles.statLabel}>Diya (You'll Get)</Text>
-                  <View style={[styles.miniBadge, { backgroundColor: Colors.errorBg }]}>
-                    <Feather name="arrow-up-right" size={10} color={Colors.error} />
-                  </View>
-                </View>
-                <Text style={[styles.statValue, { color: Colors.error }]}>
-                  {formatCurrency(summary?.totalOutstanding || 0, currencyCode)}
-                </Text>
-                <Text style={styles.statSubText}>Total Udhari</Text>
-              </View>
-
-              {/* Advance Payments */}
-              <View style={[styles.statCard, styles.advanceCard]}>
-                <View style={styles.statHeaderRow}>
-                  <Text style={styles.statLabel}>Mila (You'll Pay)</Text>
-                  <View style={[styles.miniBadge, { backgroundColor: Colors.successBg }]}>
-                    <Feather name="arrow-down-left" size={10} color={Colors.success} />
-                  </View>
-                </View>
-                <Text style={[styles.statValue, { color: Colors.success }]}>
-                  {formatCurrency(summary?.totalAdvances || 0, currencyCode)}
-                </Text>
-                <Text style={styles.statSubText}>Total Advance (Jama)</Text>
-              </View>
-            </View>
-
-            {/* Total receivables Net statement */}
+            {/* 1. Net Khata Balance (Main Premium Card) */}
             <LinearGradient
               colors={
                 (summary?.netReceivable || 0) > 0
-                  ? ["#FF8E25", "#FF4A5A"] // Gold to Coral Red
+                  ? ["#F59E0B", "#F43F5E"] // Amber Gold to Coral Rose
                   : (summary?.netReceivable || 0) < 0
-                  ? ["#05D59A", "#00B27A"] // Mint to Deep Mint
-                  : ["#242430", "#14141B"] // Dark Slate Carbon
+                  ? ["#10B981", "#047857"] // Jade to Deep Emerald Green
+                  : ["#2C2B27", "#1E1C1A"] // Warm Charcoal Carbon
               }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -493,23 +491,83 @@ const DashboardScreen = ({ navigation }) => {
               </Text>
             </LinearGradient>
 
-            {/* Quick Actions */}
+            {/* 2. Stats Summary Cards (Outstanding & Advances) */}
+            <View style={styles.statsRow}>
+              {/* Credit Outstanding */}
+              <TouchableOpacity
+                style={[styles.statCard, styles.creditCard]}
+                onPress={() => navigation.navigate("GlobalTransactionsScreen", { type: "CREDIT" })}
+                activeOpacity={0.8}
+              >
+                <View style={styles.statHeaderRow}>
+                  <Text style={[styles.statLabel, { color: "#712B13" }]}>Diya (You'll Get)</Text>
+                  <View style={[styles.miniBadge, { backgroundColor: "rgba(113, 43, 19, 0.1)" }]}>
+                    <Feather name="arrow-up-right" size={10} color="#712B13" />
+                  </View>
+                </View>
+                <Text style={[styles.statValue, { color: "#4A1B0C" }]}>
+                  {formatCurrency(summary?.totalOutstanding || 0, currencyCode)}
+                </Text>
+                <Text style={[styles.statSubText, { color: "#712B13" }]}>Total Udhari</Text>
+              </TouchableOpacity>
+
+              {/* Advance Payments */}
+              <TouchableOpacity
+                style={[styles.statCard, styles.advanceCard]}
+                onPress={() => navigation.navigate("GlobalTransactionsScreen", { type: "PAYMENT" })}
+                activeOpacity={0.8}
+              >
+                <View style={styles.statHeaderRow}>
+                  <Text style={[styles.statLabel, { color: "#085041" }]}>Mila (You'll Pay)</Text>
+                  <View style={[styles.miniBadge, { backgroundColor: "rgba(8, 80, 65, 0.1)" }]}>
+                    <Feather name="arrow-down-left" size={10} color="#085041" />
+                  </View>
+                </View>
+                <Text style={[styles.statValue, { color: "#04342C" }]}>
+                  {formatCurrency(summary?.totalAdvances || 0, currencyCode)}
+                </Text>
+                <Text style={[styles.statSubText, { color: "#085041" }]}>Total Advance (Jama)</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* 3. Redesigned Horizontal Quick Actions Dock */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Quick Actions</Text>
               <View style={styles.quickActionsContainer}>
+                {/* Voice Entry */}
                 <TouchableOpacity
-                  style={[styles.quickActionBtn, { backgroundColor: "#05D59A" }]}
+                  style={[styles.quickActionBtn, { backgroundColor: Colors.primary }]}
                   onPress={startVoiceEntry}
                   activeOpacity={0.8}
                 >
-                  <Feather name="mic" size={16} color={Colors.white} style={{ marginRight: 8 }} />
+                  <Feather name="mic" size={18} color={Colors.white} />
                   <Text style={styles.quickActionBtnText}>Voice Entry</Text>
+                </TouchableOpacity>
+
+                {/* Naya Grahak */}
+                <TouchableOpacity
+                  style={[styles.quickActionBtn, { backgroundColor: Colors.accent }]}
+                  onPress={() => navigation.navigate("Customers", { screen: "AddCustomerScreen" })}
+                  activeOpacity={0.8}
+                >
+                  <Feather name="user-plus" size={18} color="#7A4B05" />
+                  <Text style={[styles.quickActionBtnText, { color: "#7A4B05" }]}>New Grahak</Text>
+                </TouchableOpacity>
+
+                {/* Analytics */}
+                <TouchableOpacity
+                  style={[styles.quickActionBtn, { backgroundColor: Colors.bgElevated }]}
+                  onPress={() => navigation.navigate("Analytics")}
+                  activeOpacity={0.8}
+                >
+                  <Feather name="pie-chart" size={18} color={Colors.textPrimary} />
+                  <Text style={[styles.quickActionBtnText, { color: Colors.textPrimary }]}>Hisaab Graph</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Top Debtors Section */}
-            <View style={styles.section}>
+            {/* 4. Top Debtors Section (Udhari Accounts) */}
+            <View style={styles.sectionCard}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Top Udhari Accounts</Text>
                 <TouchableOpacity onPress={() => navigation.navigate("Customers")}>
@@ -525,7 +583,7 @@ const DashboardScreen = ({ navigation }) => {
                 topDebtors.map((debtor) => (
                   <TouchableOpacity
                     key={debtor.id}
-                    style={styles.debtorRow}
+                    style={[styles.debtorRow, { borderLeftWidth: 4, borderLeftColor: Colors.error }]}
                     activeOpacity={0.8}
                     onPress={() =>
                       navigation.navigate("Customers", {
@@ -551,8 +609,8 @@ const DashboardScreen = ({ navigation }) => {
               )}
             </View>
 
-            {/* Recent Shop-Wide Activity */}
-            <View style={styles.section}>
+            {/* 5. Recent Shop-Wide Activity */}
+            <View style={styles.sectionCard}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Recent Khata Entries</Text>
               </View>
@@ -564,13 +622,13 @@ const DashboardScreen = ({ navigation }) => {
               ) : (
                 recentActivity.map((txn) => {
                   const isCredit = txn.type === "CREDIT";
-                  const txnColor = isCredit ? Colors.error : Colors.success;
+                  const txnColor = isCredit ? Colors.error : Colors.primary;
                   const txnSymbol = isCredit ? "+" : "-";
                   const activityIconName = isCredit ? "arrow-up-right" : "arrow-down-left";
 
                   return (
-                    <View key={txn.id} style={styles.activityRow}>
-                      <View style={[styles.activityIconWrapper, { backgroundColor: isCredit ? Colors.errorBg : Colors.successBg }]}>
+                    <View key={txn.id} style={[styles.activityRow, { borderLeftWidth: 4, borderLeftColor: isCredit ? Colors.error : Colors.primary }]}>
+                      <View style={[styles.activityIconWrapper, { backgroundColor: isCredit ? Colors.errorBg : Colors.primaryGlow }]}>
                         <Feather name={activityIconName} size={15} color={txnColor} />
                       </View>
                       <View style={styles.activityLeft}>
@@ -779,15 +837,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bgCard,
   },
   greetingText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 13,
-    fontWeight: "700",
     color: Colors.textSecondary,
     marginBottom: 4,
   },
   shopNameText: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: Colors.white,
+    fontFamily: "PlusJakartaSans_500Medium",
+    fontSize: 19,
+    fontWeight: "500",
+    color: Colors.textPrimary,
   },
   badgeCircle: {
     width: 44,
@@ -796,8 +855,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bgElevated,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   badgeIcon: {
     fontSize: 20,
@@ -808,16 +867,16 @@ const styles = StyleSheet.create({
   },
   alertContainer: {
     backgroundColor: Colors.errorBg,
-    borderWidth: 1,
-    borderColor: "rgba(255, 107, 107, 0.2)",
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     borderRadius: 14,
     padding: 14,
     marginBottom: 20,
   },
   alertText: {
+    fontFamily: "Manrope_500Medium",
     color: Colors.error,
     fontSize: 14,
-    fontWeight: "600",
     textAlign: "center",
   },
   statsRow: {
@@ -830,34 +889,33 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bgCard,
     borderRadius: 18,
     padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   creditCard: {
-    // Add micro-shadow red if desired
+    backgroundColor: Colors.errorBg,
+    borderColor: "transparent",
   },
   advanceCard: {
-    // Add micro-shadow green if desired
+    backgroundColor: Colors.primaryLight,
+    borderColor: "transparent",
   },
   statLabel: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
-    fontWeight: "700",
     color: Colors.textSecondary,
     textTransform: "uppercase",
     marginBottom: 8,
     letterSpacing: 0.5,
   },
   statValue: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 20,
-    fontWeight: "800",
+    fontWeight: "500",
     marginBottom: 6,
   },
   statSubText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
     color: Colors.textMuted,
   },
@@ -866,31 +924,27 @@ const styles = StyleSheet.create({
     padding: 22,
     alignItems: "center",
     marginBottom: 24,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 15,
-    elevation: 8,
   },
   netLabel: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 12,
-    fontWeight: "700",
     color: "rgba(255, 255, 255, 0.75)",
     textTransform: "uppercase",
     marginBottom: 6,
     letterSpacing: 0.8,
   },
   netValue: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 32,
-    fontWeight: "900",
+    fontWeight: "500",
     color: "#FFFFFF",
     marginBottom: 6,
     letterSpacing: -0.5,
   },
   netSubText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 12,
     color: "rgba(255, 255, 255, 0.85)",
-    fontWeight: "600",
     textAlign: "center",
   },
   statHeaderRow: {
@@ -916,24 +970,26 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   sectionTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    fontWeight: "800",
-    color: Colors.white,
+    fontWeight: "500",
+    color: Colors.textPrimary,
   },
   sectionLink: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 13,
-    fontWeight: "700",
-    color: Colors.primaryLight,
+    color: Colors.primary,
   },
   emptyCard: {
     backgroundColor: Colors.bgCard,
     borderRadius: 16,
     padding: 24,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     alignItems: "center",
   },
   emptyText: {
+    fontFamily: "Manrope_400Regular",
     color: Colors.textMuted,
     fontSize: 14,
     textAlign: "center",
@@ -945,8 +1001,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   avatarMini: {
     width: 38,
@@ -956,30 +1012,32 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   avatarMiniText: {
+    fontFamily: "PlusJakartaSans_500Medium",
     color: Colors.textPrimary,
-    fontWeight: "700",
     fontSize: 13,
   },
   debtorInfo: {
     flex: 1,
   },
   debtorName: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 15,
-    fontWeight: "700",
     color: Colors.textPrimary,
     marginBottom: 2,
   },
   debtorPhone: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
     color: Colors.textMuted,
   },
   debtorBalance: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "500",
   },
   activityIconWrapper: {
     width: 32,
@@ -996,31 +1054,34 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   activityLeft: {
     flex: 1,
     paddingRight: 16,
   },
   activityCustomerName: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 14,
-    fontWeight: "700",
     color: Colors.textPrimary,
     marginBottom: 2,
   },
   activityType: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 12,
     color: Colors.textSecondary,
     marginBottom: 4,
   },
   activityDate: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 10,
     color: Colors.textMuted,
   },
   activityAmount: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "500",
   },
   syncBanner: {
     backgroundColor: Colors.warning,
@@ -1056,25 +1117,31 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   quickActionsContainer: {
-    backgroundColor: Colors.bgCard,
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
     marginTop: 8,
   },
   quickActionBtn: {
-    flexDirection: "row",
+    flex: 1,
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.primary,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: 10,
+    borderRadius: 16,
+    height: 72,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
   },
   quickActionBtnText: {
     color: Colors.white,
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 11,
+    fontWeight: "800",
+    marginTop: 6,
+    textAlign: "center",
   },
   modalOverlay: {
     flex: 1,

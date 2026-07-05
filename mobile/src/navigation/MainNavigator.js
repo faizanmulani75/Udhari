@@ -16,12 +16,14 @@ import SubscriptionScreen from "../screens/settings/SubscriptionScreen";
 import ManageStaffScreen from "../screens/settings/ManageStaffScreen";
 import AuditLogScreen from "../screens/settings/AuditLogScreen";
 import ReminderHistoryScreen from "../screens/settings/ReminderHistoryScreen";
+import PendingClaimsScreen from "../screens/settings/PendingClaimsScreen";
 import AnalyticsScreen from "../screens/dashboard/AnalyticsScreen";
 import CustomerListScreen from "../screens/customers/CustomerListScreen";
 import CustomerDetailScreen from "../screens/customers/CustomerDetailScreen";
 import AddCustomerScreen from "../screens/customers/AddCustomerScreen";
 import AddTransactionScreen from "../screens/transaction/AddTransactionScreen";
 import TransactionHistoryScreen from "../screens/transaction/TransactionHistoryScreen";
+import GlobalTransactionsScreen from "../screens/transaction/GlobalTransactionsScreen";
 
 import { Feather } from "@expo/vector-icons";
 
@@ -46,7 +48,8 @@ const SettingsStackNavigator = () => {
       <SettingsStack.Screen name="Subscription" component={SubscriptionScreen} />
       <SettingsStack.Screen name="ManageStaff" component={ManageStaffScreen} />
       <SettingsStack.Screen name="AuditLog" component={AuditLogScreen} />
-      <SettingsStack.Screen name="ReminderHistory" component={ReminderHistoryScreen} />
+      <SettingsStack.Screen name="PendingClaims" component={PendingClaimsScreen} />
+      {/* <SettingsStack.Screen name="ReminderHistory" component={ReminderHistoryScreen} /> */}
     </SettingsStack.Navigator>
   );
 };
@@ -81,7 +84,7 @@ const TabIcon = ({ name, focused }) => {
       <Feather
         name={name}
         size={22}
-        color={focused ? Colors.primaryLight : Colors.textMuted}
+        color={focused ? Colors.primary : Colors.textMuted}
         style={focused && styles.iconActive}
       />
     </View>
@@ -96,7 +99,7 @@ const TabNavigator = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: Colors.primaryLight,
+        tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.textMuted,
         tabBarStyle: {
           ...styles.tabBar,
@@ -142,20 +145,15 @@ const TabNavigator = () => {
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: Colors.bgCard,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
+    borderTopWidth: 0.5,
+    borderTopColor: Colors.border,
     height: 64,
     paddingBottom: 8,
     paddingTop: 8,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 10,
   },
   tabBarLabel: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 11,
-    fontWeight: "700",
     marginTop: 2,
   },
   iconContainer: {
@@ -181,6 +179,11 @@ const MainNavigator = () => {
       <RootStack.Screen
         name="NotificationScreen"
         component={NotificationScreen}
+        options={{ animation: "slide_from_right" }}
+      />
+      <RootStack.Screen
+        name="GlobalTransactionsScreen"
+        component={GlobalTransactionsScreen}
         options={{ animation: "slide_from_right" }}
       />
     </RootStack.Navigator>

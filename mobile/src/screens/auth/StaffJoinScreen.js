@@ -173,7 +173,7 @@ const StaffJoinScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
       <Animated.View style={[styles.glowOrb, { opacity: glowOpacity }]} />
 
       <KeyboardAvoidingView
@@ -434,17 +434,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
     marginTop: 10,
   },
   buttonDisabled: {
     backgroundColor: Colors.bgElevated,
-    shadowOpacity: 0,
-    elevation: 0,
   },
   buttonText: {
     fontSize: 15,
@@ -452,18 +445,18 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   welcomeBanner: {
-    backgroundColor: Colors.bgInput,
+    backgroundColor: Colors.bgElevated, // Swap from bgInput to bgElevated for light theme card contrast
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
     alignItems: "center",
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
   welcomeTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    fontWeight: "800",
-    color: Colors.white,
+    color: Colors.textPrimary, // Changed color to textPrimary for high contrast
     marginBottom: 6,
   },
   welcomeSub: {

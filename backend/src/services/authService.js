@@ -713,6 +713,24 @@ const activateStaffAccount = async (inviteCode, password) => {
   };
 };
 
+/**
+ * Update the push token for a user.
+ * @param {string} userId - User UUID
+ * @param {string} pushToken - Expo push token (or null to clear)
+ */
+const updatePushToken = async (userId, pushToken) => {
+  if (!userId) {
+    throw ApiError.badRequest("User ID is required");
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { pushToken },
+  });
+
+  return { success: true, message: "Push token updated successfully" };
+};
+
 module.exports = {
   sendOtp,
   verifyOtp,
@@ -722,5 +740,6 @@ module.exports = {
   login,
   verifyStaffInvite,
   activateStaffAccount,
+  updatePushToken,
 };
 

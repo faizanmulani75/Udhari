@@ -125,7 +125,7 @@ const ShopSetupScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeContainer} edges={["top", "bottom"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
       
       {/* Background radial-glow simulation */}
       <View style={styles.glowOrb} />
@@ -426,10 +426,6 @@ const styles = StyleSheet.create({
   },
   inputFocused: {
     borderColor: Colors.borderFocus,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
   },
   inputError: {
     borderColor: Colors.error,
@@ -477,11 +473,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
   },
   submitBtnText: {
     color: Colors.white,

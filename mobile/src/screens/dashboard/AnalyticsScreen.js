@@ -13,6 +13,8 @@ import {
   Alert,
   StatusBar,
   Dimensions,
+  LayoutAnimation,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -51,7 +53,9 @@ const AnalyticsScreen = ({ navigation }) => {
     fetchAnalytics(days);
   }, [days]);
 
-  // ── Derived values ──────────────────────────────────────
+  useEffect(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  }, [analytics, isLoading]);  // ── Derived values ──────────────────────────────────────
   const totalSales    = parseFloat(analytics?.totalCredit   || 0);
   const collected     = parseFloat(analytics?.totalPayments || 0);
   const outstanding   = Math.max(0, totalSales - collected);
@@ -62,22 +66,59 @@ const AnalyticsScreen = ({ navigation }) => {
   const collectionRate = totalSales > 0 ? Math.round((collected / totalSales) * 100) : 0;
   const pendingRate    = 100 - collectionRate;
 
+  // ── Monthly Aggregation Helper ───────────────────────────
+  const isMonthly = days === 365;
+  const chartData = React.useMemo(() => {
+    if (!isMonthly || !dailyTrends.length) return dailyTrends;
+
+    const monthlyMap = new Map();
+    // Pre-populate last 12 months with 0s to guarantee exactly 12 columns
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(1); // avoid end of month overflow bugs
+      d.setMonth(d.getMonth() - i);
+      const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      monthlyMap.set(yearMonth, {
+        date: `${yearMonth}-01`,
+        credit: 0,
+        payment: 0,
+        label: d.toLocaleDateString("en-IN", { month: "short" }),
+      });
+    }
+
+    // Accumulate daily values into corresponding months
+    dailyTrends.forEach((day) => {
+      const dateObj = new Date(day.date);
+      const yearMonth = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
+      if (monthlyMap.has(yearMonth)) {
+        const entry = monthlyMap.get(yearMonth);
+        entry.credit += parseFloat(day.credit || 0);
+        entry.payment += parseFloat(day.payment || 0);
+      }
+    });
+
+    return Array.from(monthlyMap.values());
+  }, [dailyTrends, isMonthly]);
+
   // ── Bar Chart ────────────────────────────────────────────
   const renderBarChart = () => {
-    if (!dailyTrends.length) return null;
+    if (!chartData.length) return null;
 
     const maxVal = Math.max(
-      ...dailyTrends.map((t) => Math.max(parseFloat(t.credit || 0), parseFloat(t.payment || 0), 1))
+      ...chartData.map((t) => Math.max(parseFloat(t.credit || 0), parseFloat(t.payment || 0), 1))
     );
 
     return (
       <View style={styles.chartOuter}>
         <View style={styles.chartBarsRow}>
-          {dailyTrends.map((day, idx) => {
+          {chartData.map((day, idx) => {
             const creditH = Math.max(4, (parseFloat(day.credit || 0) / maxVal) * CHART_HEIGHT);
             const paymentH = Math.max(4, (parseFloat(day.payment || 0) / maxVal) * CHART_HEIGHT);
             const dateObj = new Date(day.date);
-            const label = dateObj.toLocaleDateString("en-IN", { weekday: "narrow" });
+            
+            const label = isMonthly
+              ? day.label
+              : dateObj.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 
             return (
               <View key={idx} style={styles.chartCol}>
@@ -85,7 +126,9 @@ const AnalyticsScreen = ({ navigation }) => {
                   <View style={[styles.bar, { height: creditH, backgroundColor: Colors.error }]} />
                   <View style={[styles.bar, { height: paymentH, backgroundColor: Colors.primary }]} />
                 </View>
-                <Text style={styles.barLabel}>{label}</Text>
+                <Text style={styles.barLabel}>
+                  {label}
+                </Text>
               </View>
             );
           })}
@@ -134,22 +177,22 @@ const AnalyticsScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
 
       {/* ── Header ── */}
       <View style={styles.headerBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        {/* <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Feather name="chevron-left" size={24} color={Colors.textPrimary} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <Text style={styles.headerTitle}>Hisaab Analytics</Text>
-        <View style={styles.placeholder} />
+        {/* <View style={styles.placeholder} /> */}
       </View>
 
       {/* ── Period Selector ── */}
       <View style={styles.periodSelector}>
         {[
           { label: "Last 7 Days", val: 7 },
-          { label: "Last 30 Days", val: 30 },
+          { label: "Monthly", val: 365 },
         ].map(({ label, val }) => (
           <TouchableOpacity
             key={val}
@@ -175,63 +218,13 @@ const AnalyticsScreen = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         >
           {/* ══════════════════════════════════════════
-              SECTION 1 — Weekly Summary
-          ══════════════════════════════════════════ */}
-          <Text style={styles.sectionHeading}>
-            {days === 7 ? "Weekly" : "Monthly"} Summary
-          </Text>
-          <View style={styles.summaryGrid}>
-            {/* Total Sales */}
-            <View style={[styles.summaryCard, styles.summaryCardWide]}>
-              <View style={styles.summaryIconWrap}>
-                <Feather name="trending-up" size={14} color={Colors.primary} />
-              </View>
-              <Text style={styles.summaryCardLabel}>Total Sales</Text>
-              <Text style={[styles.summaryCardValue, { color: Colors.primary }]}>
-                {formatCurrency(totalSales, currencyCode)}
-              </Text>
-            </View>
-
-            {/* Collections */}
-            <View style={[styles.summaryCard, styles.summaryCardWide]}>
-              <View style={[styles.summaryIconWrap, { backgroundColor: "rgba(5,213,154,0.08)" }]}>
-                <Feather name="arrow-down-circle" size={14} color={Colors.success} />
-              </View>
-              <Text style={styles.summaryCardLabel}>Collections</Text>
-              <Text style={[styles.summaryCardValue, { color: Colors.success }]}>
-                {formatCurrency(collected, currencyCode)}
-              </Text>
-            </View>
-
-            {/* Outstanding */}
-            <View style={[styles.summaryCard, styles.summaryCardWide]}>
-              <View style={[styles.summaryIconWrap, { backgroundColor: "rgba(255,74,90,0.08)" }]}>
-                <Feather name="clock" size={14} color={Colors.error} />
-              </View>
-              <Text style={styles.summaryCardLabel}>Outstanding</Text>
-              <Text style={[styles.summaryCardValue, { color: Colors.error }]}>
-                {formatCurrency(outstanding, currencyCode)}
-              </Text>
-            </View>
-
-            {/* Customers Added */}
-            <View style={[styles.summaryCard, styles.summaryCardWide]}>
-              <View style={[styles.summaryIconWrap, { backgroundColor: "rgba(255,142,37,0.08)" }]}>
-                <Feather name="user-plus" size={14} color={Colors.accent} />
-              </View>
-              <Text style={styles.summaryCardLabel}>Customers Added</Text>
-              <Text style={[styles.summaryCardValue, { color: Colors.accent }]}>
-                {customersAdded}
-              </Text>
-            </View>
-          </View>
-
-          {/* ══════════════════════════════════════════
-              SECTION 2 — Daily Trend Chart
+              SECTION 1 — Ledger Trends Chart (First Priority)
           ══════════════════════════════════════════ */}
           <View style={styles.sectionCard}>
             <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitle}>Daily Ledger Trends</Text>
+              <Text style={styles.sectionTitle}>
+                {isMonthly ? "Monthly Ledger Trends" : "Daily Ledger Trends"}
+              </Text>
               <View style={styles.legendRow}>
                 <View style={styles.legendDot}>
                   <View style={[styles.dot, { backgroundColor: Colors.error }]} />
@@ -244,17 +237,77 @@ const AnalyticsScreen = ({ navigation }) => {
               </View>
             </View>
             {renderBarChart()}
-            {dailyTrends.length === 0 && (
+            {chartData.length === 0 && (
               <Text style={styles.emptyNote}>No transactions in this period.</Text>
             )}
           </View>
 
           {/* ══════════════════════════════════════════
-              SECTION 3 — Top Customers (highest pending)
+              SECTION 2 — Collection Rate Meter (Second Priority)
+          ══════════════════════════════════════════ */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Collection Rate & Progress</Text>
+            {renderCollectionRate()}
+          </View>
+
+          {/* ══════════════════════════════════════════
+              SECTION 3 — Summary Metric Grid (Third Priority)
+          ══════════════════════════════════════════ */}
+          <Text style={styles.sectionHeading}>
+            {days === 7 ? "Weekly" : "Yearly"} Summary
+          </Text>
+          <View style={styles.summaryGrid}>
+            {/* Total Sales */}
+            <View style={[styles.summaryCard, styles.summaryCardWide]}>
+              <View style={[styles.summaryIconWrap, { backgroundColor: Colors.errorBg }]}>
+                <Feather name="trending-up" size={14} color={Colors.error} />
+              </View>
+              <Text style={styles.summaryCardLabel}>Total Sales</Text>
+              <Text style={[styles.summaryCardValue, { color: Colors.error }]}>
+                {formatCurrency(totalSales, currencyCode)}
+              </Text>
+            </View>
+
+            {/* Collections */}
+            <View style={[styles.summaryCard, styles.summaryCardWide]}>
+              <View style={[styles.summaryIconWrap, { backgroundColor: Colors.primaryGlow }]}>
+                <Feather name="arrow-down-circle" size={14} color={Colors.primary} />
+              </View>
+              <Text style={styles.summaryCardLabel}>Collections</Text>
+              <Text style={[styles.summaryCardValue, { color: Colors.primary }]}>
+                {formatCurrency(collected, currencyCode)}
+              </Text>
+            </View>
+
+            {/* Outstanding */}
+            <View style={[styles.summaryCard, styles.summaryCardWide]}>
+              <View style={[styles.summaryIconWrap, { backgroundColor: Colors.errorBg }]}>
+                <Feather name="clock" size={14} color={Colors.error} />
+              </View>
+              <Text style={styles.summaryCardLabel}>Outstanding</Text>
+              <Text style={[styles.summaryCardValue, { color: Colors.error }]}>
+                {formatCurrency(outstanding, currencyCode)}
+              </Text>
+            </View>
+
+            {/* Customers Added */}
+            <View style={[styles.summaryCard, styles.summaryCardWide]}>
+              <View style={[styles.summaryIconWrap, { backgroundColor: "rgba(95, 94, 90, 0.08)" }]}>
+                <Feather name="user-plus" size={14} color={Colors.neutralLight} />
+              </View>
+              <Text style={styles.summaryCardLabel}>Customers Added</Text>
+              <Text style={[styles.summaryCardValue, { color: Colors.neutralLight }]}>
+                {customersAdded}
+              </Text>
+            </View>
+          </View>
+
+          {/* ══════════════════════════════════════════
+              SECTION 4 — Top Customers (highest pending)
           ══════════════════════════════════════════ */}
           {topDebtors.length > 0 && (
             <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Highest Pending</Text>
+              <Text style={styles.sectionTitle}>Highest Pending Accounts</Text>
               {topDebtors.map((customer, idx) => {
                 const bal = parseFloat(customer.balance || 0);
                 const share = totalSales > 0 ? Math.min(100, (bal / totalSales) * 100) : 0;
@@ -280,14 +333,6 @@ const AnalyticsScreen = ({ navigation }) => {
             </View>
           )}
 
-          {/* ══════════════════════════════════════════
-              SECTION 4 — Collection Rate
-          ══════════════════════════════════════════ */}
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Collection Rate</Text>
-            {renderCollectionRate()}
-          </View>
-
           <View style={{ height: 20 }} />
         </ScrollView>
       )}
@@ -305,11 +350,11 @@ const styles = StyleSheet.create({
   headerBar: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderColor: Colors.borderLight,
+    borderBottomWidth: 0.5,
+    borderColor: Colors.border,
   },
   backButton: {
     width: 40,
@@ -320,22 +365,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
+    
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    fontWeight: "800",
-    color: Colors.white,
+    fontWeight: "500",
+    color: Colors.textPrimary,
   },
   placeholder: { width: 40 },
 
   // ── Period ──
   periodSelector: {
     flexDirection: "row",
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bgInput,
     marginHorizontal: 20,
     marginTop: 16,
     borderRadius: 14,
     padding: 4,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   periodTab: {
     flex: 1,
@@ -344,14 +391,17 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   periodTabActive: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.primary, // Teal fill
   },
   periodTabText: {
+    fontFamily: "Manrope_500Medium",
     color: Colors.textSecondary,
     fontSize: 13,
-    fontWeight: "700",
   },
-  periodTabTextActive: { color: Colors.white },
+  periodTabTextActive: {
+    color: Colors.white,
+    fontFamily: "Manrope_500Medium",
+  },
 
   // ── Loader ──
   loaderContainer: {
@@ -360,9 +410,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loaderText: {
+    fontFamily: "Manrope_400Regular",
     color: Colors.textSecondary,
     fontSize: 14,
-    fontWeight: "700",
     marginTop: 12,
   },
 
@@ -374,8 +424,9 @@ const styles = StyleSheet.create({
 
   // ── Section heading ──
   sectionHeading: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "500",
     color: Colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 1,
@@ -391,8 +442,8 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     borderRadius: 18,
     padding: 16,
   },
@@ -409,23 +460,24 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   summaryCardLabel: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
     color: Colors.textSecondary,
-    fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.4,
     marginBottom: 4,
   },
   summaryCardValue: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 20,
-    fontWeight: "900",
+    fontWeight: "500",
   },
 
   // ── Section Card ──
   sectionCard: {
     backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     borderRadius: 20,
     padding: 18,
     marginBottom: 16,
@@ -437,9 +489,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 15,
     color: Colors.white,
-    fontWeight: "800",
     marginBottom: 14,
   },
   legendRow: {
@@ -457,15 +509,15 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   legendText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
     color: Colors.textSecondary,
-    fontWeight: "600",
   },
   emptyNote: {
+    fontFamily: "Manrope_400Regular",
     color: Colors.textMuted,
     textAlign: "center",
     fontSize: 13,
-    fontWeight: "600",
     paddingVertical: 12,
   },
 
@@ -494,9 +546,15 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   barLabel: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 9,
     color: Colors.textMuted,
-    fontWeight: "700",
+    marginTop: 5,
+    width: 60,
+    textAlign: "center",
+  },
+  barLabelPlaceholder: {
+    height: 12,
     marginTop: 5,
   },
   chartBaseline: {
@@ -521,8 +579,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   debtorRankText: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 10,
-    fontWeight: "800",
     color: Colors.textMuted,
   },
   debtorInfo: {
@@ -534,15 +592,16 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   debtorName: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 13,
-    fontWeight: "700",
     color: Colors.white,
     flex: 1,
     marginRight: 8,
   },
   debtorBalance: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "500",
   },
   debtorBarBg: {
     height: 4,

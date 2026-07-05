@@ -241,7 +241,7 @@ const SubscriptionScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
 
       {/* Header Bar */}
       <View style={styles.headerBar}>
@@ -362,8 +362,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderColor: Colors.borderLight,
+    borderBottomWidth: 0.5,
+    borderColor: Colors.border,
   },
   backButton: {
     width: 40,
@@ -374,9 +374,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    fontWeight: "800",
-    color: Colors.white,
+    color: Colors.textPrimary,
   },
   placeholder: {
     width: 40,
@@ -387,9 +387,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loaderText: {
+    fontFamily: "Manrope_400Regular",
     color: Colors.textSecondary,
     fontSize: 14,
-    fontWeight: "700",
     marginTop: 12,
   },
   scrollContent: {
@@ -400,8 +400,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bgCard,
     borderRadius: 24,
     padding: 20,
-    borderWidth: 1.5,
-    borderColor: Colors.borderFocus,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     marginBottom: 24,
   },
   activePlanHeader: {
@@ -410,31 +410,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   subLabel: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
-    fontWeight: "700",
     color: Colors.textMuted,
     textTransform: "uppercase",
     marginBottom: 4,
     letterSpacing: 0.8,
   },
   activePlanName: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 20,
-    fontWeight: "800",
   },
   activeBadge: {
-    backgroundColor: Colors.successBg,
+    backgroundColor: "#FAC775", // Amber tint
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 8,
   },
   activeBadgeText: {
-    color: Colors.success,
+    color: "#7A4B05", // Amber 900
     fontSize: 11,
-    fontWeight: "800",
+    fontFamily: "Manrope_500Medium",
   },
   planStatsDivider: {
-    height: 1,
-    backgroundColor: Colors.borderLight,
+    height: 0.5,
+    backgroundColor: Colors.border,
     marginVertical: 16,
   },
   planStatsRow: {
@@ -445,32 +445,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statLabel: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
     color: Colors.textMuted,
-    fontWeight: "600",
     marginBottom: 4,
   },
   statValue: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 14,
     color: Colors.textPrimary,
-    fontWeight: "800",
   },
   sectionHeading: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 16,
-    fontWeight: "800",
-    color: Colors.white,
+    color: Colors.textPrimary,
     marginBottom: 16,
   },
   planCard: {
     backgroundColor: Colors.bgCard,
     borderRadius: 24,
     padding: 20,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     marginBottom: 16,
   },
   planCardActive: {
-    borderColor: Colors.borderFocus,
+    borderColor: Colors.primary, // Teal border active
   },
   planCardHeader: {
     flexDirection: "row",
@@ -479,12 +479,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   planTitleName: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 16,
-    fontWeight: "800",
-    color: Colors.white,
+    color: Colors.textPrimary,
     marginBottom: 4,
   },
   planLimitSubtitle: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 12,
     color: Colors.textSecondary,
   },
@@ -493,11 +494,12 @@ const styles = StyleSheet.create({
     alignItems: "baseline",
   },
   planPriceText: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 24,
-    fontWeight: "800",
-    color: Colors.white,
+    color: Colors.textPrimary,
   },
   planCycleText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 12,
     color: Colors.textMuted,
   },
@@ -513,13 +515,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   currentIndicatorText: {
+    fontFamily: "Manrope_500Medium",
     color: Colors.white,
     fontSize: 10,
-    fontWeight: "700",
   },
   featuresDivider: {
-    height: 1,
-    backgroundColor: Colors.borderLight,
+    height: 0.5,
+    backgroundColor: Colors.border,
     marginBottom: 12,
   },
   featureItem: {
@@ -532,6 +534,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   featureText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 13,
     color: Colors.textSecondary,
     lineHeight: 18,

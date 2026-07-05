@@ -219,7 +219,7 @@ const ManageStaffScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
 
       {/* Header Bar */}
       <View style={styles.headerBar}>
@@ -247,7 +247,7 @@ const ManageStaffScreen = ({ navigation }) => {
           />
         </View>
         <Text style={styles.limitFooterText}>
-          Plan Tier: <Text style={{ color: Colors.primaryLight, fontWeight: "700" }}>{activePlanName}</Text>
+          Plan Tier: <Text style={{ color: Colors.primary, fontWeight: "700" }}>{activePlanName}</Text>
         </Text>
       </View>
 
@@ -463,8 +463,8 @@ const ManageStaffScreen = ({ navigation }) => {
                 }}
                 style={[styles.actionBtn, styles.copyActionBtn]}
               >
-                <Feather name="copy" size={16} color={Colors.white} style={{ marginRight: 6 }} />
-                <Text style={styles.actionBtnText}>Copy Code</Text>
+                <Feather name="copy" size={16} color={Colors.textPrimary} style={{ marginRight: 6 }} />
+                <Text style={[styles.actionBtnText, { color: Colors.textPrimary }]}>Copy Code</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: Colors.white,
+    color: Colors.textPrimary,
   },
   placeholder: {
     width: 40,
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
   },
   limitValue: {
     fontSize: 13,
-    color: Colors.white,
+    color: Colors.textPrimary,
     fontWeight: "800",
   },
   progressBarBg: {
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   avatarMiniText: {
-    color: Colors.primaryLight,
+    color: Colors.primary,
     fontWeight: "800",
     fontSize: 14,
   },
@@ -620,7 +620,7 @@ const styles = StyleSheet.create({
   staffName: {
     fontSize: 15,
     fontWeight: "800",
-    color: Colors.white,
+    color: Colors.textPrimary,
   },
   roleBadge: {
     paddingVertical: 2,
@@ -628,40 +628,41 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   ownerBadge: {
-    backgroundColor: "rgba(217, 119, 6, 0.12)",
+    backgroundColor: "#FAC775", // Amber tint
   },
   staffBadge: {
-    backgroundColor: Colors.successBg,
+    backgroundColor: "#5F5E5A", // Neutral gray tint
   },
   pendingBadge: {
-    backgroundColor: "rgba(255, 160, 0, 0.15)",
+    backgroundColor: "#5F5E5A",
   },
   restrictedBadge: {
-    backgroundColor: Colors.warningBg,
+    backgroundColor: Colors.errorBg, // Coral tint
   },
   roleBadgeText: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 9,
-    fontWeight: "800",
   },
   ownerBadgeText: {
-    color: Colors.accentLight,
+    color: "#7A4B05", // Amber-900 equivalent
   },
   staffBadgeText: {
-    color: Colors.primaryLight,
+    color: "#F1EFE8",
   },
   pendingBadgeText: {
-    color: Colors.warning,
+    color: "#B4B2A9",
   },
   restrictedBadgeText: {
-    color: Colors.warning,
+    color: Colors.error,
   },
   staffPhone: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 12,
     color: Colors.textSecondary,
   },
   deleteBtn: {
     padding: 8,
-    backgroundColor: "rgba(239, 68, 68, 0.08)",
+    backgroundColor: "rgba(216, 90, 48, 0.08)", // Coral background
     borderRadius: 10,
   },
   actionRow: {
@@ -674,18 +675,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 6,
     paddingHorizontal: 8,
-    backgroundColor: Colors.bgElevated,
+    backgroundColor: "transparent",
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     borderRadius: 8,
     gap: 4,
   },
   restrictedActiveBtn: {
-    backgroundColor: "rgba(245, 158, 11, 0.12)",
-    borderColor: Colors.warning,
-    borderWidth: 1,
+    backgroundColor: "transparent",
+    borderColor: Colors.error,
+    borderWidth: 0.5,
   },
   restrictBtnText: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 11,
-    fontWeight: "700",
   },
   footerBtnWrapper: {
     position: "absolute",
@@ -719,7 +722,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: Colors.white,
+    color: Colors.textPrimary,
   },
   closeModalBtn: {
     width: 32,
@@ -740,7 +743,7 @@ const styles = StyleSheet.create({
   textInput: {
     backgroundColor: Colors.bgInput,
     borderRadius: 14,
-    color: Colors.white,
+    color: Colors.textPrimary,
     paddingVertical: 14,
     paddingHorizontal: 16,
     fontSize: 15,
@@ -824,7 +827,7 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: Colors.white,
+    color: Colors.textPrimary,
     marginBottom: 4,
   },
   successSub: {

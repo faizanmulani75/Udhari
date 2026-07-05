@@ -153,7 +153,8 @@ exports.Prisma.UserScalarFieldEnum = {
   updatedAt: 'updatedAt',
   inviteCode: 'inviteCode',
   inviteCodeExpiresAt: 'inviteCodeExpiresAt',
-  inviteCodeUsed: 'inviteCodeUsed'
+  inviteCodeUsed: 'inviteCodeUsed',
+  pushToken: 'pushToken'
 };
 
 exports.Prisma.CustomerScalarFieldEnum = {
@@ -272,6 +273,19 @@ exports.Prisma.NotificationScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.PaymentClaimScalarFieldEnum = {
+  id: 'id',
+  shopId: 'shopId',
+  customerId: 'customerId',
+  amount: 'amount',
+  txnRef: 'txnRef',
+  status: 'status',
+  customerClaimedAt: 'customerClaimedAt',
+  shopConfirmedAt: 'shopConfirmedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -338,7 +352,8 @@ exports.Prisma.ModelName = {
   Tag: 'Tag',
   CustomerTag: 'CustomerTag',
   TransactionNote: 'TransactionNote',
-  Notification: 'Notification'
+  Notification: 'Notification',
+  PaymentClaim: 'PaymentClaim'
 };
 
 /**

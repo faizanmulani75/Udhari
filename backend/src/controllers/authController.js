@@ -80,6 +80,15 @@ const activateStaffAccount = catchAsync(async (req, res) => {
   return ApiResponse.success(res, "Staff account activated successfully", result);
 });
 
+/**
+ * Update user push token.
+ */
+const updatePushToken = catchAsync(async (req, res) => {
+  const { pushToken } = req.body;
+  const result = await authService.updatePushToken(req.userId, pushToken);
+  return ApiResponse.success(res, result.message, result);
+});
+
 module.exports = {
   sendOtp,
   verifyOtp,
@@ -89,4 +98,5 @@ module.exports = {
   login,
   verifyStaffInvite,
   activateStaffAccount,
+  updatePushToken,
 };

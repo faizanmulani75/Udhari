@@ -121,7 +121,7 @@ const ReminderHistoryScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
 
       {/* Header Bar */}
       <View style={styles.headerBar}>
@@ -178,8 +178,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderColor: Colors.borderLight,
+    borderBottomWidth: 0.5,
+    borderColor: Colors.border,
   },
   backButton: {
     width: 40,
@@ -190,8 +190,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    fontWeight: "800",
     color: Colors.white,
   },
   listContent: {
@@ -204,8 +204,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   cardHeader: {
     flexDirection: "row",
@@ -218,12 +218,13 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   customerName: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 16,
-    fontWeight: "700",
     color: Colors.white,
     marginBottom: 4,
   },
   phoneText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 12,
     color: Colors.textSecondary,
   },
@@ -231,11 +232,12 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   amountText: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 16,
-    fontWeight: "800",
     color: Colors.error,
   },
   amountLabel: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 10,
     color: Colors.textMuted,
     marginTop: 2,
@@ -245,8 +247,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderTopWidth: 1,
-    borderColor: Colors.borderLight,
+    borderTopWidth: 0.5,
+    borderColor: Colors.border,
     paddingTop: 10,
     marginBottom: 6,
   },
@@ -257,13 +259,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
   channelText: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 11,
     color: Colors.textSecondary,
-    fontWeight: "600",
   },
   statusRow: {
     flexDirection: "row",
@@ -276,11 +278,12 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   statusText: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 11,
-    fontWeight: "850",
     textTransform: "uppercase",
   },
   dateText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 10,
     color: Colors.textMuted,
     textAlign: "right",

@@ -4,6 +4,7 @@
 
 import { create } from "zustand";
 import * as authService from "../services/authService";
+import { unregisterPushNotificationsAsync } from "../services/pushNotificationService";
 
 const useAuthStore = create((set, get) => ({
   // ── State ──────────────────────────────────────────────
@@ -119,6 +120,7 @@ const useAuthStore = create((set, get) => ({
    */
   logout: async () => {
     try {
+      await unregisterPushNotificationsAsync();
       await authService.logout();
     } catch (error) {
       console.warn("Logout cleanup failed:", error.message);

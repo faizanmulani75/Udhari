@@ -36,6 +36,7 @@ const getCustomerPortalData = async (token) => {
           address: true,
           logoUrl: true,
           currency: true,
+          upiId: true,
         },
       },
     },
@@ -43,6 +44,21 @@ const getCustomerPortalData = async (token) => {
 
   if (!customer) {
     throw ApiError.notFound("Invalid or expired statement link");
+  }
+
+  let upiUrl = null;
+  let defaultTxnRef = null;
+  if (customer.shop && customer.shop.upiId) {
+    defaultTxnRef = `UDH${customer.shop.id.slice(0, 6)}${customer.id.slice(0, 6)}${Date.now()}`;
+    const amount = parseFloat(customer.balance);
+    if (amount > 0) {
+      upiUrl = `upi://pay?pa=${encodeURIComponent(customer.shop.upiId)}` +
+               `&pn=${encodeURIComponent(customer.shop.name)}` +
+               `&am=${amount}` +
+               `&tr=${defaultTxnRef}` +
+               `&tn=${encodeURIComponent('Udhari Payment')}` +
+               `&cu=INR`;
+    }
   }
 
   return {
@@ -54,6 +70,8 @@ const getCustomerPortalData = async (token) => {
       createdAt: customer.createdAt,
     },
     shop: customer.shop,
+    upiUrl,
+    defaultTxnRef,
   };
 };
 
@@ -195,8 +213,88 @@ const createCustomerPortalDispute = async (token, transactionId, content) => {
   return note;
 };
 
+/**
+ * Submit a payment verification claim from the public portal.
+ *
+ * @param {string} token - Customer qrToken
+ * @param {number} amount - Paid amount
+ * @param {string} txnRef - Transaction reference number
+ */
+const createPaymentClaim = async (token, amount, txnRef) => {
+  if (!token) throw ApiError.badRequest("Token is required");
+  if (!amount || amount <= 0) throw ApiError.badRequest("Valid payment amount is required");
+  if (!txnRef) throw ApiError.badRequest("Transaction reference is required");
+
+  // Resolve customer
+  const customer = await prisma.customer.findFirst({
+    where: {
+      OR: [
+        { qrToken: token },
+        { id: token },
+      ],
+      isActive: true,
+      deletedAt: null,
+    },
+  });
+
+  if (!customer) throw ApiError.notFound("Invalid or expired statement link");
+
+  // Create the payment claim
+  const claim = await prisma.paymentClaim.create({
+    data: {
+      shopId: customer.shopId,
+      customerId: customer.id,
+      amount,
+      txnRef: txnRef.trim(),
+      status: "PENDING_SHOP_CONFIRM",
+    },
+  });
+
+  // Notify the shopkeeper
+  const { notifyAllShopUsers } = require("./notificationService");
+  await notifyAllShopUsers(
+    customer.shopId,
+    "Payment Claim Received",
+    `${customer.name} has claimed a UPI payment of INR ${amount.toFixed(2)}. Verify now.`,
+    "TRANSACTION"
+  );
+
+  return claim;
+};
+
+/**
+ * Get claims list for a customer (public portal).
+ *
+ * @param {string} token - Customer qrToken
+ */
+const getCustomerClaims = async (token) => {
+  if (!token) throw ApiError.badRequest("Token is required");
+
+  const customer = await prisma.customer.findFirst({
+    where: {
+      OR: [
+        { qrToken: token },
+        { id: token },
+      ],
+      isActive: true,
+      deletedAt: null,
+    },
+    select: { id: true },
+  });
+
+  if (!customer) throw ApiError.notFound("Invalid or expired statement link");
+
+  return await prisma.paymentClaim.findMany({
+    where: { customerId: customer.id },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+  });
+};
+
 module.exports = {
   getCustomerPortalData,
   getCustomerPortalTransactions,
   createCustomerPortalDispute,
+  createPaymentClaim,
+  getCustomerClaims,
 };

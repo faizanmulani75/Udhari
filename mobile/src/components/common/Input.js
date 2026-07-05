@@ -46,14 +46,15 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   label: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 12,
-    fontWeight: "700",
     color: Colors.textSecondary,
     marginBottom: 6,
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },
   input: {
+    fontFamily: "Manrope_400Regular",
     backgroundColor: Colors.bgInput,
     borderRadius: 14,
     color: Colors.textPrimary,
@@ -74,9 +75,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.error,
   },
   errorText: {
+    fontFamily: "Manrope_500Medium",
     color: Colors.error,
     fontSize: 11,
-    fontWeight: "600",
     marginTop: 4,
     marginLeft: 4,
   },

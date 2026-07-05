@@ -57,6 +57,7 @@ const reminderRoutes = require("./routes/reminderRoutes");
 const tagRoutes = require("./routes/tagRoutes");
 const noteRoutes = require("./routes/noteRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const paymentClaimRoutes = require("./routes/paymentClaimRoutes");
 const sanitizeInput = require("./middleware/sanitizeInput");
 
 const app = express();
@@ -120,6 +121,9 @@ app.use("/api/v1/notes", authMiddleware, shopContext, noteRoutes);
 
 // In-app notifications (protected, shop-scoped)
 app.use("/api/v1/notifications", authMiddleware, shopContext, notificationRoutes);
+
+// Payment claims (protected, shop-scoped)
+app.use("/api/v1/payment-claims", paymentClaimRoutes);
 
 // Dashboard reports (protected, shop-scoped)
 app.use("/api/v1/dashboard", authMiddleware, shopContext, dashboardRoutes);

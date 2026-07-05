@@ -120,7 +120,7 @@ const RegisterScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
 
       {/* Background glow orb */}
       <Animated.View style={[styles.glowOrb, { opacity: glowOpacity }]} />
@@ -385,17 +385,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
     marginVertical: 12,
   },
   buttonDisabled: {
     backgroundColor: Colors.bgElevated,
-    shadowOpacity: 0,
-    elevation: 0,
   },
   buttonText: {
     fontSize: 16,

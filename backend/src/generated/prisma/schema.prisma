@@ -86,6 +86,7 @@ model Shop {
   subscriptions Subscription[]
   reminders     Reminder[]
   notifications Notification[]
+  paymentClaims PaymentClaim[]
 
   @@index([phone])
   @@map("shops")
@@ -114,6 +115,9 @@ model User {
   inviteCode          String?   @map("invite_code") @db.VarChar(50)
   inviteCodeExpiresAt DateTime? @map("invite_code_expires_at") @db.Timestamptz
   inviteCodeUsed      Boolean   @default(false) @map("invite_code_used")
+
+  // Push notifications token (Expo push token)
+  pushToken String? @map("push_token") @db.VarChar(255)
 
   // Relations
   shop                Shop?         @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -150,10 +154,11 @@ model Customer {
   updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
-  shop         Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
-  reminders    Reminder[]
-  tags         CustomerTag[]
+  shop          Shop           @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  transactions  Transaction[]
+  reminders     Reminder[]
+  tags          CustomerTag[]
+  paymentClaims PaymentClaim[]
 
   @@unique([shopId, phone])
   @@index([shopId])
@@ -366,4 +371,31 @@ model Notification {
   @@index([shopId])
   @@index([createdAt])
   @@map("notifications")
+}
+
+// ========================
+// 12. PAYMENT CLAIMS
+// ========================
+// Semi-automatic UPI payment verification claims.
+
+model PaymentClaim {
+  id                String    @id @default(uuid()) @db.Uuid
+  shopId            String    @map("shop_id") @db.Uuid
+  customerId        String    @map("customer_id") @db.Uuid
+  amount            Decimal   @db.Decimal(12, 2)
+  txnRef            String    @unique @map("txn_ref") @db.VarChar(100)
+  status            String    @default("PENDING_SHOP_CONFIRM") @db.VarChar(50) // "PENDING_SHOP_CONFIRM", "CONFIRMED", "REJECTED"
+  customerClaimedAt DateTime  @default(now()) @map("customer_claimed_at") @db.Timestamptz
+  shopConfirmedAt   DateTime? @map("shop_confirmed_at") @db.Timestamptz
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  shop     Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([shopId])
+  @@index([customerId])
+  @@index([status])
+  @@map("payment_claims")
 }

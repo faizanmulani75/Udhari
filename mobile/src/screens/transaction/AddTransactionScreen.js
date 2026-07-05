@@ -17,6 +17,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  LayoutAnimation,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useTransactionStore from "../../store/transactionStore";
@@ -135,6 +136,10 @@ const AddTransactionScreen = ({ route, navigation }) => {
   const [errors, setErrors] = useState({});
   const [isListening, setIsListening] = useState(false);
   const [isAiLoading, setIsAiLoading] = useState(false);
+
+  useEffect(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  }, [errors, amount, isListening, isAiLoading, storeError]);
 
   const handleAiParse = async () => {
     const plan = shop?.subscriptions?.[0]?.plan || "FREE";
@@ -398,7 +403,7 @@ const AddTransactionScreen = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
 
       {/* Header Bar */}
       <View style={styles.headerBar}>
@@ -608,8 +613,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderColor: Colors.borderLight,
+    borderBottomWidth: 0.5,
+    borderColor: Colors.border,
   },
   backButton: {
     width: 40,
@@ -620,14 +625,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   backText: {
+    fontFamily: "Manrope_500Medium",
     color: Colors.textSecondary,
     fontSize: 16,
-    fontWeight: "700",
   },
   headerTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    fontWeight: "800",
-    color: Colors.white,
+    color: Colors.textPrimary,
   },
   placeholder: {
     width: 40,
@@ -646,22 +651,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   errorText: {
+    fontFamily: "PlusJakartaSans_500Medium",
     color: Colors.error,
     fontSize: 16,
-    fontWeight: "700",
   },
   alertContainer: {
     backgroundColor: Colors.errorBg,
-    borderWidth: 1,
-    borderColor: "rgba(255, 107, 107, 0.2)",
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     borderRadius: 14,
     padding: 14,
     marginBottom: 20,
   },
   alertText: {
+    fontFamily: "Manrope_400Regular",
     color: Colors.error,
     fontSize: 14,
-    fontWeight: "600",
     textAlign: "center",
   },
   customerSummaryCard: {
@@ -670,8 +675,8 @@ const styles = StyleSheet.create({
     padding: 18,
     flexDirection: "row",
     justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     marginBottom: 16,
   },
   customerMeta: {
@@ -681,47 +686,47 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   customerLabel: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
-    fontWeight: "700",
     color: Colors.textMuted,
     textTransform: "uppercase",
     marginBottom: 4,
     letterSpacing: 0.8,
   },
   customerName: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 16,
-    fontWeight: "800",
-    color: Colors.white,
+    color: Colors.dark,
   },
   customerBalance: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 16,
-    fontWeight: "800",
   },
   card: {
     backgroundColor: Colors.bgCard,
     borderRadius: 24,
     padding: 24,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   amountFieldWrapper: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 12,
-    borderBottomWidth: 1.5,
+    borderBottomWidth: 0.5,
     borderColor: Colors.border,
     marginBottom: 14,
   },
   amountSymbol: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 36,
-    fontWeight: "700",
     color: Colors.textPrimary,
     marginRight: 8,
   },
   amountInput: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 44,
-    fontWeight: "800",
     textAlign: "center",
     minWidth: 150,
   },
@@ -729,17 +734,17 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.error,
   },
   fieldErrorText: {
+    fontFamily: "Manrope_400Regular",
     color: Colors.error,
     fontSize: 12,
-    fontWeight: "600",
     textAlign: "center",
     marginTop: -8,
     marginBottom: 16,
   },
   calcPreview: {
-    color: Colors.primaryLight,
+    fontFamily: "Manrope_500Medium",
+    color: Colors.primary,
     fontSize: 14,
-    fontWeight: "700",
     textAlign: "center",
     marginTop: -8,
     marginBottom: 16,
@@ -756,20 +761,20 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   presetText: {
+    fontFamily: "Manrope_500Medium",
     color: Colors.textPrimary,
     fontSize: 13,
-    fontWeight: "700",
   },
   selectorWrapper: {
     marginBottom: 20,
   },
   label: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 12,
-    fontWeight: "700",
     color: Colors.textSecondary,
     marginBottom: 8,
     textTransform: "uppercase",
@@ -781,24 +786,24 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   methodBtn: {
-    backgroundColor: Colors.bgInput,
+    backgroundColor: "transparent",
     borderRadius: 10,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
   methodBtnActive: {
-    backgroundColor: Colors.successBg,
-    borderColor: Colors.success,
+    backgroundColor: Colors.primary, // Solid Teal active background
+    borderColor: Colors.primary,
   },
   methodText: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 12,
     color: Colors.textSecondary,
-    fontWeight: "700",
   },
   methodTextActive: {
-    color: Colors.success,
+    color: Colors.white, // High contrast white text for solid active button
   },
   saveBtn: {
     marginTop: 8,
@@ -813,8 +818,8 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   inputLabel: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 12,
-    fontWeight: "700",
     color: Colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 0.8,
@@ -826,7 +831,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
   micButtonActive: {
@@ -834,8 +839,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.error,
   },
   micButtonText: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 11,
-    fontWeight: "700",
     marginLeft: 4,
   },
   headerButtonsRow: {
@@ -852,9 +857,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   aiButtonText: {
+    fontFamily: "Manrope_500Medium",
     color: Colors.white,
     fontSize: 11,
-    fontWeight: "700",
     marginLeft: 4,
   },
 });

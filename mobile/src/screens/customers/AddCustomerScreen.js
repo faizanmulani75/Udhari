@@ -14,6 +14,7 @@ import {
   StatusBar,
   TouchableOpacity,
   Alert,
+  LayoutAnimation,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useCustomerStore from "../../store/customerStore";
@@ -48,6 +49,10 @@ const AddCustomerScreen = ({ route, navigation }) => {
   const [creditLimit, setCreditLimit] = useState("");
 
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  }, [errors, storeError, isActionLoading]);
 
   // Populate data in edit mode
   useEffect(() => {
@@ -150,7 +155,7 @@ const AddCustomerScreen = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
 
       {/* Header bar */}
       <View style={styles.headerBar}>
@@ -284,8 +289,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderColor: Colors.borderLight,
+    borderBottomWidth: 0.5,
+    borderColor: Colors.border,
   },
   backButton: {
     width: 40,
@@ -296,13 +301,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   backText: {
+    fontFamily: "Manrope_500Medium",
     color: Colors.textSecondary,
     fontSize: 16,
-    fontWeight: "700",
   },
   headerTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    fontWeight: "800",
     color: Colors.white,
   },
   placeholder: {
@@ -319,24 +324,24 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bgCard,
     borderRadius: 24,
     padding: 24,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   textAreaContainer: {
     marginBottom: 20,
   },
   alertContainer: {
     backgroundColor: Colors.errorBg,
-    borderWidth: 1,
-    borderColor: "rgba(255, 107, 107, 0.2)",
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     borderRadius: 14,
     padding: 14,
     marginBottom: 20,
   },
   alertText: {
+    fontFamily: "Manrope_400Regular",
     color: Colors.error,
     fontSize: 14,
-    fontWeight: "600",
     textAlign: "center",
   },
   saveBtn: {

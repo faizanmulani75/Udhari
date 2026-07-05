@@ -106,7 +106,7 @@ const SettingsScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
 
       {/* Header Bar */}
       <View style={styles.headerBar}>
@@ -120,128 +120,191 @@ const SettingsScreen = ({ navigation }) => {
           </View>
         )}
 
-        {/* User Card */}
-        <View style={styles.userCard}>
+        {/* 1. Sleek Profile Header */}
+        <View style={styles.profileHeader}>
           <View style={styles.avatarLarge}>
             <Text style={styles.avatarLargeText}>
               {user?.name?.substring(0, 2).toUpperCase() || "SH"}
             </Text>
           </View>
-          <Text style={styles.userName}>{user?.name || "Shop Owner"}</Text>
-          <Text style={styles.userRole}>System {user?.role || "owner"}</Text>
+          <View style={styles.profileMeta}>
+            <Text style={styles.profileName}>{user?.name || "Shop Owner"}</Text>
+            <Text style={styles.profileRole}>System {user?.role || "owner"}</Text>
+          </View>
         </View>
 
-        {/* Business Details Section */}
-        <View style={styles.card}>
+        {/* 2. Business Settings Section */}
+        <View style={styles.sectionPanel}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>🏪 Business Settings</Text>
+            <Text style={styles.sectionHeaderTitle}>Business Profile</Text>
             {user?.role === "owner" && (
               <TouchableOpacity onPress={handleOpenEdit} style={styles.editBtn}>
-                <Feather name="edit-2" size={16} color={Colors.primaryLight} />
+                <Feather name="edit-3" size={16} color={Colors.textMuted} />
               </TouchableOpacity>
             )}
           </View>
-
-          <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>Shop Name</Text>
-            <Text style={styles.fieldValue}>{shop?.name || "kirana store"}</Text>
-          </View>
-
-          <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>Business Phone</Text>
-            <Text style={styles.fieldValue}>{shop?.phone || user?.phone}</Text>
-          </View>
-
-          <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>Currency</Text>
-            <Text style={styles.fieldValue}>{shop?.currency || "INR"}</Text>
-          </View>
-
-          <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>Shop Address</Text>
-            <Text style={styles.fieldValue} numberOfLines={2}>
-              {shop?.address || "No address specified"}
-            </Text>
-          </View>
-
-          <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>Business UPI ID</Text>
-            <Text style={styles.fieldValue}>{shop?.upiId || "Not configured"}</Text>
-          </View>
-        </View>
-
-        {/* Subscription Plan Section */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>💎 Subscription</Text>
-          <View style={styles.planContainer}>
-            <View style={styles.planMeta}>
-              <Text style={styles.planName}>
-                {(shop?.subscriptions?.[0]?.plan || "FREE") + " Plan"}
-              </Text>
-              <Text style={styles.planLimitText}>
-                Limit: {shop?.subscriptions?.[0]?.plan === "PRO" ? "Unlimited" : `Up to ${shop?.subscriptions?.[0]?.maxCustomers || 10}`} active customers
-              </Text>
-            </View>
-            <View style={styles.planBadge}>
-              <Text style={styles.planBadgeText}>Active</Text>
-            </View>
-          </View>
-          <Button
-            title="Manage Subscription"
-            onPress={() => navigation.navigate("Subscription")}
-            variant="outline"
-            style={styles.upgradeBtn}
-          />
-        </View>
-
-        {/* General Actions */}
-        <View style={styles.actionBlock}>
-          <TouchableOpacity style={styles.actionRowBtn} onPress={() => navigation.navigate("ManageStaff")}>
-            <View style={styles.actionBtnLeft}>
-              <Text style={styles.actionBtnEmoji}>👥</Text>
-              <Text style={styles.actionBtnLabel}>Manage Staff</Text>
-            </View>
-            <Text style={styles.actionBtnChevron}>→</Text>
-          </TouchableOpacity>
-
-          {user?.role === "owner" && (
-            <TouchableOpacity style={styles.actionRowBtn} onPress={() => navigation.navigate("AuditLog")}>
-              <View style={styles.actionBtnLeft}>
-                <Text style={styles.actionBtnEmoji}>📋</Text>
-                <Text style={styles.actionBtnLabel}>Audit Trails</Text>
+          <View style={styles.panelRows}>
+            <View style={styles.panelRow}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
+                  <Feather name="home" size={16} color={Colors.primary} />
+                </View>
+                <Text style={styles.rowLabel}>Shop Name</Text>
               </View>
-              <Text style={styles.actionBtnChevron}>→</Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity style={styles.actionRowBtn} onPress={() => navigation.navigate("ReminderHistory")}>
-            <View style={styles.actionBtnLeft}>
-              <Text style={styles.actionBtnEmoji}>📱</Text>
-              <Text style={styles.actionBtnLabel}>Reminder Logs</Text>
+              <Text style={styles.rowValue} numberOfLines={1}>{shop?.name || "Kirana Store"}</Text>
             </View>
-            <Text style={styles.actionBtnChevron}>→</Text>
-          </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionRowBtn} onPress={handleLogout}>
-            <View style={styles.actionBtnLeft}>
-              <Text style={styles.actionBtnEmoji}>🚪</Text>
-              <Text style={styles.actionBtnLabel}>Sign Out</Text>
+            <View style={styles.panelRow}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
+                  <Feather name="phone" size={16} color={Colors.primary} />
+                </View>
+                <Text style={styles.rowLabel}>Phone</Text>
+              </View>
+              <Text style={styles.rowValue}>{shop?.phone || user?.phone}</Text>
             </View>
-            <Text style={styles.actionBtnChevron}>→</Text>
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.actionRowBtn, styles.deactivateBtn]}
-            onPress={handleDeactivate}
-          >
-            <View style={styles.actionBtnLeft}>
-              <Text style={styles.actionBtnEmoji}>⚠</Text>
-              <Text style={[styles.actionBtnLabel, { color: Colors.error }]}>
-                Deactivate Shop Account
+            <View style={styles.panelRow}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
+                  <Feather name="dollar-sign" size={16} color={Colors.primary} />
+                </View>
+                <Text style={styles.rowLabel}>Currency</Text>
+              </View>
+              <Text style={styles.rowValue}>{shop?.currency || "INR"}</Text>
+            </View>
+
+            <View style={styles.panelRow}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
+                  <Feather name="map-pin" size={16} color={Colors.primary} />
+                </View>
+                <Text style={styles.rowLabel}>Address</Text>
+              </View>
+              <Text style={styles.rowValue} numberOfLines={1}>
+                {shop?.address || "Not specified"}
               </Text>
             </View>
-            <Text style={[styles.actionBtnChevron, { color: Colors.error }]}>→</Text>
-          </TouchableOpacity>
+
+            <View style={[styles.panelRow, { borderBottomWidth: 0 }]}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
+                  <Feather name="credit-card" size={16} color={Colors.primary} />
+                </View>
+                <Text style={styles.rowLabel}>Business UPI ID</Text>
+              </View>
+              <Text style={styles.rowValue} numberOfLines={1}>{shop?.upiId || "Not configured"}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* 3. Account Actions Section */}
+        <View style={styles.sectionPanel}>
+          <Text style={styles.sectionHeaderTitle}>Account & Staff</Text>
+          <View style={styles.panelRows}>
+            <TouchableOpacity style={styles.panelRowBtn} onPress={() => navigation.navigate("PendingClaims")}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: "rgba(245, 158, 11, 0.08)" }]}>
+                  <Feather name="shield" size={16} color={Colors.accent} />
+                </View>
+                <Text style={styles.rowLabel}>Pending Confirmations</Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={Colors.textMuted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.panelRowBtn} onPress={() => navigation.navigate("ManageStaff")}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: "rgba(245, 158, 11, 0.08)" }]}>
+                  <Feather name="users" size={16} color={Colors.accent} />
+                </View>
+                <Text style={styles.rowLabel}>Manage Staff</Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={Colors.textMuted} />
+            </TouchableOpacity>
+
+            {user?.role === "owner" && (
+              <TouchableOpacity style={styles.panelRowBtn} onPress={() => navigation.navigate("AuditLog")}>
+                <View style={styles.rowLeft}>
+                  <View style={[styles.iconBox, { backgroundColor: "rgba(245, 158, 11, 0.08)" }]}>
+                    <Feather name="activity" size={16} color={Colors.accent} />
+                  </View>
+                  <Text style={styles.rowLabel}>Audit Trails</Text>
+                </View>
+                <Feather name="chevron-right" size={16} color={Colors.textMuted} />
+              </TouchableOpacity>
+            )}
+
+            {/* <TouchableOpacity style={[styles.panelRowBtn, { borderBottomWidth: 0 }]} onPress={() => navigation.navigate("ReminderHistory")}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: "rgba(245, 158, 11, 0.08)" }]}>
+                  <Feather name="bell" size={16} color={Colors.accent} />
+                </View>
+                <Text style={styles.rowLabel}>Reminder Logs</Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={Colors.textMuted} />
+            </TouchableOpacity> */}
+            {/* <TouchableOpacity style={[styles.panelRowBtn, { borderBottomWidth: 0 }]} onPress={() => navigation.navigate("AuditLog")}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: "rgba(245, 158, 11, 0.08)" }]}>
+                  <Feather name="bell" size={16} color={Colors.accent} />
+                </View>
+                <Text style={styles.rowLabel}>Audit Logs</Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={Colors.textMuted} />
+            </TouchableOpacity> */}
+          </View>
+        </View>
+
+        {/* 4. Subscription Section */}
+        <View style={styles.sectionPanel}>
+          <Text style={styles.sectionHeaderTitle}>Plan & Billing</Text>
+          <View style={styles.panelRows}>
+            <TouchableOpacity style={[styles.panelRowBtn, { borderBottomWidth: 0 }]} onPress={() => navigation.navigate("Subscription")}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
+                  <Feather name="award" size={16} color={Colors.primary} />
+                </View>
+                <View style={styles.planTextMeta}>
+                  <Text style={styles.rowLabel}>Subscription Plan</Text>
+                  <Text style={styles.rowSubLabel}>
+                    {(shop?.subscriptions?.[0]?.plan || "FREE") + " Plan"}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.planRightRow}>
+                <View style={styles.planBadge}>
+                  <Text style={styles.planBadgeText}>Active</Text>
+                </View>
+                <Feather name="chevron-right" size={16} color={Colors.textMuted} />
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* 5. Security & Access Section */}
+        <View style={styles.sectionPanel}>
+          <Text style={styles.sectionHeaderTitle}>Security & Access</Text>
+          <View style={styles.panelRows}>
+            <TouchableOpacity style={styles.panelRowBtn} onPress={handleLogout}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: "rgba(135, 134, 128, 0.08)" }]}>
+                  <Feather name="log-out" size={16} color={Colors.textSecondary} />
+                </View>
+                <Text style={styles.rowLabel}>Sign Out</Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={Colors.textMuted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.panelRowBtn, { borderBottomWidth: 0 }]} onPress={handleDeactivate}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: Colors.errorBg }]}>
+                  <Feather name="trash-2" size={16} color={Colors.error} />
+                </View>
+                <Text style={[styles.rowLabel, { color: Colors.error }]}>Deactivate Shop Account</Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={Colors.error} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.versionWrapper}>
@@ -321,7 +384,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: Colors.white,
+    color: Colors.dark,
   },
   scrollContent: {
     padding: 20,
@@ -344,162 +407,186 @@ const styles = StyleSheet.create({
   userCard: {
     backgroundColor: Colors.bgCard,
     borderRadius: 24,
-    padding: 24,
+    padding: 18,
+    flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     marginBottom: 20,
   },
   avatarLarge: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: Colors.primaryGlow,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: "#F5C4B3", // Coral tint bg
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(108, 92, 231, 0.2)",
-    marginBottom: 12,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+    marginRight: 16,
   },
   avatarLargeText: {
-    color: Colors.primaryLight,
-    fontSize: 20,
-    fontWeight: "800",
+    color: "#712B13", // Coral-900 initials
+    fontSize: 18,
+    fontFamily: "PlusJakartaSans_500Medium",
+  },
+  userMeta: {
+    flex: 1,
   },
   userName: {
-    fontSize: 18,
-    fontWeight: "800",
+    fontFamily: "PlusJakartaSans_500Medium",
+    fontSize: 16,
     color: Colors.white,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   userRole: {
-    fontSize: 12,
+    fontFamily: "Manrope_500Medium",
+    fontSize: 11,
     color: Colors.textSecondary,
     textTransform: "uppercase",
-    fontWeight: "600",
+    letterSpacing: 0.5,
   },
-  card: {
+  sectionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  profileHeader: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.bgCard,
     borderRadius: 24,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    marginBottom: 20,
+    padding: 16,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+    marginBottom: 24,
   },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: Colors.white,
+  profileMeta: {
+    flex: 1,
+  },
+  profileName: {
+    fontFamily: "PlusJakartaSans_500Medium",
+    fontSize: 18,
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  profileRole: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: 11,
+    color: Colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  sectionPanel: {
+    marginBottom: 24,
+  },
+  sectionHeaderTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
+    fontSize: 12,
+    color: Colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+    marginBottom: 10,
+    paddingHorizontal: 4,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 10,
+    paddingHorizontal: 4,
   },
   editBtn: {
     padding: 4,
   },
-  fieldRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: Colors.borderLight,
+  panelRows: {
+    backgroundColor: Colors.bgCard,
+    borderRadius: 24,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+    overflow: "hidden",
   },
-  fieldLabel: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  fieldValue: {
-    fontSize: 14,
-    color: Colors.textPrimary,
-    fontWeight: "600",
-    maxWidth: "60%",
-    textAlign: "right",
-  },
-  planContainer: {
+  panelRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 0.5,
+    borderColor: Colors.border,
   },
-  planMeta: {
+  panelRowBtn: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 0.5,
+    borderColor: Colors.border,
+  },
+  rowLeft: {
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
-  planName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: Colors.white,
-    marginBottom: 4,
+  iconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
   },
-  planLimitText: {
-    fontSize: 12,
+  rowLabel: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: 14,
+    color: Colors.textPrimary,
+  },
+  rowValue: {
+    fontFamily: "Manrope_400Regular",
+    fontSize: 14,
     color: Colors.textSecondary,
+    maxWidth: "50%",
+  },
+  planTextMeta: {
+    flexDirection: "column",
+  },
+  rowSubLabel: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: 12,
+    color: Colors.primary,
+    marginTop: 2,
+  },
+  planRightRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   planBadge: {
-    backgroundColor: Colors.successBg,
+    backgroundColor: "#FAC775", // Amber tint bg
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 8,
   },
   planBadgeText: {
-    color: Colors.success,
-    fontSize: 12,
-    fontWeight: "700",
+    color: "#7A4B05", // Amber-900 text
+    fontSize: 11,
+    fontFamily: "Manrope_500Medium",
   },
   upgradeBtn: {
-    paddingVertical: 12,
-  },
-  actionBlock: {
-    backgroundColor: Colors.bgCard,
-    borderRadius: 24,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    marginBottom: 24,
-    overflow: "hidden",
-  },
-  actionRowBtn: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  deactivateBtn: {
-    borderBottomWidth: 0,
-  },
-  actionBtnLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  actionBtnEmoji: {
-    fontSize: 18,
-  },
-  actionBtnLabel: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: Colors.textPrimary,
-  },
-  actionBtnChevron: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    fontWeight: "700",
+    margin: 16,
+    marginTop: 8,
   },
   versionWrapper: {
     alignItems: "center",
   },
   versionText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 12,
     color: Colors.textMuted,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: "rgba(0, 0, 0, 0.45)", // Flat scrim (no harsh glow)
     justifyContent: "flex-end",
   },
   modalCard: {
@@ -508,8 +595,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 28,
     padding: 24,
     paddingBottom: 40,
-    borderTopWidth: 1.5,
-    borderColor: Colors.borderLight,
+    borderTopWidth: 0.5,
+    borderColor: Colors.border,
   },
   modalHeader: {
     flexDirection: "row",
@@ -518,9 +605,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    fontWeight: "800",
-    color: Colors.white,
+    color: Colors.textPrimary,
   },
   closeModalBtn: {
     width: 32,
@@ -531,21 +618,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   inputLabel: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 11,
-    fontWeight: "700",
     color: Colors.textSecondary,
     marginBottom: 6,
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },
   textInput: {
+    fontFamily: "Manrope_400Regular",
     backgroundColor: Colors.bgInput,
     borderRadius: 14,
-    color: Colors.white,
+    color: Colors.textPrimary,
     paddingVertical: 14,
     paddingHorizontal: 16,
     fontSize: 15,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     marginBottom: 16,
   },

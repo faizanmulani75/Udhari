@@ -271,7 +271,7 @@ const TransactionHistoryScreen = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
 
       {/* Header Bar */}
       <View style={styles.headerBar}>
@@ -464,8 +464,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderColor: Colors.borderLight,
+    borderBottomWidth: 0.5,
+    borderColor: Colors.border,
   },
   backButton: {
     width: 40,
@@ -476,22 +476,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   backText: {
+    fontFamily: "Manrope_500Medium",
     color: Colors.textSecondary,
     fontSize: 20,
-    fontWeight: "700",
   },
   headerInfo: {
     alignItems: "center",
   },
   headerTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    fontWeight: "800",
     color: Colors.white,
   },
   headerSubtitle: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 12,
-    color: Colors.primaryLight,
-    fontWeight: "600",
+    color: Colors.primary,
     marginTop: 2,
   },
   placeholder: {
@@ -509,20 +509,20 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   filterTabActive: {
-    backgroundColor: Colors.primaryGlow,
-    borderColor: Colors.primary,
+    backgroundColor: "transparent",
+    borderColor: Colors.primary, // Teal active border
   },
   filterTabText: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 12,
     color: Colors.textSecondary,
-    fontWeight: "700",
   },
   filterTabTextActive: {
-    color: Colors.primaryLight,
+    color: Colors.primary, // Teal active text
   },
   listContent: {
     paddingHorizontal: 20,
@@ -533,8 +533,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   txnMain: {
     flexDirection: "row",
@@ -546,24 +546,27 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   txnType: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 14,
-    fontWeight: "700",
     color: Colors.white,
     textTransform: "uppercase",
     marginBottom: 4,
   },
   txnDate: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
     color: Colors.textMuted,
     marginBottom: 8,
   },
   txnDesc: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 13,
     color: Colors.textSecondary,
     lineHeight: 18,
     marginBottom: 6,
   },
   txnRef: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
     color: Colors.textMuted,
     fontStyle: "italic",
@@ -572,25 +575,26 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   txnAmount: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 16,
-    fontWeight: "800",
   },
   txnBalanceAfter: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
     color: Colors.textMuted,
     marginTop: 4,
   },
   reverseBtn: {
-    borderTopWidth: 1,
-    borderColor: Colors.borderLight,
+    borderTopWidth: 0.5,
+    borderColor: Colors.border,
     paddingTop: 10,
     marginTop: 12,
     alignItems: "center",
   },
   reverseBtnText: {
+    fontFamily: "Manrope_500Medium",
     color: Colors.error,
     fontSize: 12,
-    fontWeight: "700",
   },
   reverseRow: {
     flexDirection: "row",
@@ -614,8 +618,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     padding: 28,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   modalHeader: {
     flexDirection: "row",
@@ -624,8 +628,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: "800",
+    fontFamily: "PlusJakartaSans_500Medium",
+    fontSize: 19,
     color: Colors.white,
   },
   closeModalBtn: {
@@ -637,6 +641,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalSubtitle: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 14,
     color: Colors.textSecondary,
     lineHeight: 20,
@@ -650,8 +655,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cancelModalText: {
+    fontFamily: "Manrope_500Medium",
     color: Colors.textSecondary,
-    fontWeight: "700",
     fontSize: 15,
   },
   notesRow: {
@@ -665,19 +670,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
   noteIndicatorDispute: {
     backgroundColor: "rgba(239, 68, 68, 0.1)",
-    borderColor: "rgba(239, 68, 68, 0.3)",
   },
   noteIndicatorInfo: {
     backgroundColor: Colors.primaryGlow,
-    borderColor: "rgba(108, 92, 231, 0.3)",
   },
   noteIndicatorText: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 10,
-    fontWeight: "700",
   },
 });
 

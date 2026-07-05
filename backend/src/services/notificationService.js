@@ -4,6 +4,37 @@
 const prisma = require("../config/prisma");
 
 /**
+ * Helper to dispatch push notifications to Expo gateway
+ */
+const sendPushNotification = async (pushToken, title, message) => {
+  if (!pushToken || !pushToken.startsWith("ExponentPushToken")) {
+    return;
+  }
+
+  try {
+    console.log(`📡 Dispatching Expo push notification to: ${pushToken}`);
+    const response = await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({
+        to: pushToken,
+        sound: "default",
+        title: title,
+        body: message,
+      }),
+    });
+
+    const result = await response.ok ? await response.json() : await response.text();
+    console.log("Expo Push Response:", JSON.stringify(result));
+  } catch (error) {
+    console.error("Failed to send Expo push notification:", error);
+  }
+};
+
+/**
  * Creates an in-app notification for a single user.
  *
  * @param {string} shopId - Shop UUID
@@ -15,7 +46,8 @@ const prisma = require("../config/prisma");
  */
 const createNotification = async (shopId, userId, title, message, type = "SYSTEM") => {
   try {
-    return await prisma.notification.create({
+    // Create the DB notification record
+    const dbNotif = await prisma.notification.create({
       data: {
         shopId,
         userId,
@@ -24,6 +56,18 @@ const createNotification = async (shopId, userId, title, message, type = "SYSTEM
         type,
       },
     });
+
+    // Check if user has an active push token and trigger native push
+    const user = await prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { pushToken: true },
+    });
+
+    if (user && user.pushToken) {
+      sendPushNotification(user.pushToken, title, message);
+    }
+
+    return dbNotif;
   } catch (error) {
     console.error("Failed to create notification:", error);
     // Fail silently in production so business logic doesn't crash if notifications fail

@@ -8,7 +8,7 @@ import api from "./api";
  * @param {object} params - { page, limit }
  */
 export const fetchNotifications = async (params = {}) => {
-  const response = await api.get("/api/v1/notifications", { params });
+  const response = await api.get("/notifications", { params });
   return response.data;
 };
 
@@ -16,7 +16,7 @@ export const fetchNotifications = async (params = {}) => {
  * Get count of unread notifications.
  */
 export const fetchUnreadCount = async () => {
-  const response = await api.get("/api/v1/notifications/unread-count");
+  const response = await api.get("/notifications/unread-count");
   return response.data;
 };
 
@@ -25,7 +25,7 @@ export const fetchUnreadCount = async () => {
  * @param {string} id - Notification UUID
  */
 export const markNotificationRead = async (id) => {
-  const response = await api.put(`/api/v1/notifications/${id}/read`);
+  const response = await api.put(`/notifications/${id}/read`);
   return response.data;
 };
 
@@ -33,7 +33,7 @@ export const markNotificationRead = async (id) => {
  * Mark all notifications as read.
  */
 export const markAllNotificationsRead = async () => {
-  const response = await api.put("/api/v1/notifications/read-all");
+  const response = await api.put("/notifications/read-all");
   return response.data;
 };
 
@@ -42,7 +42,7 @@ export const markAllNotificationsRead = async () => {
  * @param {string} id - Notification UUID
  */
 export const deleteNotification = async (id) => {
-  const response = await api.delete(`/api/v1/notifications/${id}`);
+  const response = await api.delete(`/notifications/${id}`);
   return response.data;
 };
 
@@ -50,6 +50,6 @@ export const deleteNotification = async (id) => {
  * Clear all read notifications.
  */
 export const clearReadNotifications = async () => {
-  const response = await api.delete("/api/v1/notifications");
+  const response = await api.delete("/notifications");
   return response.data;
 };
