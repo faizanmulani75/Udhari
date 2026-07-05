@@ -31,14 +31,41 @@ apiClient.interceptors.response.use(
           return Promise.resolve({ data: cachedData, status: 200, fromCache: true });
         }
       } else if (['post', 'put', 'patch', 'delete'].includes(method)) {
+        // Never queue auth requests — they are time-sensitive (OTPs, credentials)
+        const AUTH_SKIP_PATTERNS = ['/auth/', '/forgot-password', '/send-otp', '/verify-otp', '/login'];
+        const isAuthRequest = AUTH_SKIP_PATTERNS.some(p => (originalRequest.url || '').includes(p));
+        if (isAuthRequest) {
+          // Let the error propagate normally so the UI can show a proper "no internet" message
+          const message = error.message || "No internet connection. Please try again.";
+          error.message = message;
+          return Promise.reject(error);
+        }
+
+        const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        let responseData = { success: true, message: "Action queued for sync.", data: {} };
+        if (originalRequest.url === "/customers" && method === "post") {
+          let parsedBody = originalRequest.data;
+          if (typeof parsedBody === "string") {
+            try { parsedBody = JSON.parse(parsedBody); } catch (e) {}
+          }
+          responseData.data = {
+            id: tempId,
+            name: parsedBody?.name || "Offline Customer",
+            phone: parsedBody?.phone || "",
+            balance: 0
+          };
+        }
+
         await queueOfflineAction({
+          tempId,
           method: originalRequest.method,
           url: originalRequest.url,
           data: originalRequest.data
         });
         
         return Promise.resolve({ 
-          data: { success: true, message: "Action queued for sync.", data: {} },
+          data: responseData,
           status: 200,
           queued: true 
         });

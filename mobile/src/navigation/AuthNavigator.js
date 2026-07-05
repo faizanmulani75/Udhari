@@ -8,6 +8,7 @@ import LoginScreen from "../screens/auth/LoginScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
 import OtpScreen from "../screens/auth/OtpScreen";
 import StaffJoinScreen from "../screens/auth/StaffJoinScreen";
+import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
 import Colors from "../constants/colors";
 
 const Stack = createNativeStackNavigator();
@@ -25,6 +26,7 @@ const AuthNavigator = () => {
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="OtpScreen" component={OtpScreen} />
       <Stack.Screen name="StaffJoin" component={StaffJoinScreen} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
     </Stack.Navigator>
   );
 };

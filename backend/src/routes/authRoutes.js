@@ -15,6 +15,8 @@ router.post("/register/verify", authController.registerVerify);
 router.post("/login", authController.login);
 router.post("/staff/verify-invite", authController.verifyStaffInvite);
 router.post("/staff/activate", authController.activateStaffAccount);
+router.post("/forgot-password/request", authController.forgotPasswordRequest);
+router.post("/forgot-password/reset", authController.forgotPasswordReset);
 
 // Protected routes
 router.get("/me", authMiddleware, authController.getProfile);

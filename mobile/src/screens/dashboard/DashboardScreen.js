@@ -327,10 +327,13 @@ const DashboardScreen = ({ navigation }) => {
       setIsSyncing(true);
       try {
         const res = await syncQueuedTransactions();
-        if (res && res.success && res.synced > 0) {
+        console.log("🔄 syncQueuedTransactions result:", res);
+        if (res && res.success) {
           await fetchDashboard();
           const updated = await getOfflineTransactions();
           setPendingSyncCount(updated.length);
+        } else if (res && !res.success) {
+          console.warn("🔄 Sync returned unsuccessful:", res.message);
         }
       } catch (err) {
         console.warn("Auto sync failed:", err);
@@ -1084,7 +1087,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   syncBanner: {
-    backgroundColor: Colors.warning,
+    backgroundColor: Colors.error,
     borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 16,

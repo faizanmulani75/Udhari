@@ -14,9 +14,10 @@ const OFFLINE_KEY = "offline_transactions_queue";
 export const checkOnlineStatus = async () => {
   try {
     const healthUrl = `${Config.API_URL}/health`;
-    await axios.get(healthUrl, { timeout: 3000 });
+    await axios.get(healthUrl, { timeout: 10000 });
     return true;
   } catch (error) {
+    console.warn("🌐 checkOnlineStatus failed. URL:", `${Config.API_URL}/health`, "Error:", error.message || error);
     return false;
   }
 };
@@ -93,7 +94,33 @@ export const syncQueuedTransactions = async (onProgressUpdate) => {
     return { success: false, message: "Device is still offline" };
   }
 
-  const queue = await getOfflineTransactions();
+  let queue = await getOfflineTransactions();
+  
+  // DEBUG: Print the raw queue so we can see what is stuck
+  console.log("🗂️ Raw offline queue:", JSON.stringify(queue, null, 2));
+
+  // Clean corrupt or non-syncable entries from the queue:
+  // 1. Non-generic transactions with invalid/undefined customerId
+  // 2. Generic actions whose URL contains "undefined"
+  // 3. Auth-related requests (forgot-password, login, OTP) — never replay these
+  const AUTH_URL_PATTERNS = ["/auth/", "/forgot-password", "/send-otp", "/verify-otp", "/login"];
+  const cleanQueue = queue.filter(tx => {
+    if (tx.type !== "generic_action" && (!tx.customerId || tx.customerId === "undefined")) {
+      return false;
+    }
+    if (tx.type === "generic_action" && tx.url) {
+      if (tx.url.includes("undefined")) return false;
+      if (AUTH_URL_PATTERNS.some(pattern => tx.url.includes(pattern))) return false;
+    }
+    return true;
+  });
+
+  if (cleanQueue.length !== queue.length) {
+    console.log(`🧹 Filtered out ${queue.length - cleanQueue.length} corrupt offline transactions.`);
+    await saveOfflineTransactions(cleanQueue);
+    queue = cleanQueue;
+  }
+
   if (queue.length === 0) {
     return { success: true, message: "Queue is empty" };
   }
@@ -110,7 +137,7 @@ export const syncQueuedTransactions = async (onProgressUpdate) => {
         const token = await AsyncStorage.getItem("accessToken");
         const shopId = await AsyncStorage.getItem("shopId");
         
-        await axios({
+        const response = await axios({
           baseURL: Config.API_URL,
           method: tx.method,
           url: tx.url,
@@ -121,6 +148,31 @@ export const syncQueuedTransactions = async (onProgressUpdate) => {
             ...(shopId && { "x-shop-id": shopId }),
           }
         });
+
+        // If this was a customer creation and succeeded, extract the real database UUID
+        if (tx.method?.toLowerCase() === "post" && (tx.url === "/customers" || tx.url === "customers") && response.data?.success) {
+          const newCustomerId = response.data.data?.id;
+          if (newCustomerId && tx.tempId) {
+            console.log(`🔗 Mapping offline customer tempId ${tx.tempId} to new database ID ${newCustomerId}`);
+            
+            // 1. Update the rest of the current executing queue array so they sync correctly in this same run
+            for (const remainingTx of queue) {
+              if (remainingTx.customerId === tx.tempId) {
+                remainingTx.customerId = newCustomerId;
+              }
+              if (remainingTx.url && remainingTx.url.includes(tx.tempId)) {
+                remainingTx.url = remainingTx.url.replace(tx.tempId, newCustomerId);
+              }
+              if (remainingTx.data) {
+                if (typeof remainingTx.data === "object") {
+                  if (remainingTx.data.customerId === tx.tempId) {
+                    remainingTx.data.customerId = newCustomerId;
+                  }
+                }
+              }
+            }
+          }
+        }
       } else if (tx.type === "credit") {
         await transactionService.addCredit(tx.customerId, tx.data);
       } else if (tx.type === "payment") {

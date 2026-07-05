@@ -336,7 +336,7 @@ const OtpScreen = ({ navigation, route }) => {
             {isLoading ? (
               <ActivityIndicator color={Colors.white} size="small" />
             ) : (
-              <Text style={styles.buttonText}>Verify & Continue</Text>
+              <Text style={[styles.buttonText, (otp.join("").length < OTP_LENGTH) && styles.buttonTextDisabled]}>Verify & Continue</Text>
             )}
           </TouchableOpacity>
 
@@ -521,6 +521,9 @@ const styles = StyleSheet.create({
     color: Colors.white,
     letterSpacing: 0.5,
   },
+  buttonTextDisabled: {
+    color: Colors.textMuted,
+  },
 
   // ── Resend ──
   resendContainer: {
@@ -531,7 +534,7 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
   },
   timerText: {
-    color: Colors.primaryLight,
+    color: Colors.primary,
     fontWeight: "600",
   },
   resendActive: {

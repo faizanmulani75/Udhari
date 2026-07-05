@@ -150,3 +150,13 @@ export const activateStaffAccount = async (inviteCode, password) => {
   return response.data;
 };
 
+export const forgotPasswordRequest = async (email) => {
+  const response = await api.post("/auth/forgot-password/request", { email });
+  return response.data;
+};
+
+export const forgotPasswordReset = async (email, otp, newPassword) => {
+  const response = await api.post("/auth/forgot-password/reset", { email, otp, newPassword });
+  return response.data;
+};
+

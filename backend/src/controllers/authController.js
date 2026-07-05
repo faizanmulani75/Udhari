@@ -89,6 +89,24 @@ const updatePushToken = catchAsync(async (req, res) => {
   return ApiResponse.success(res, result.message, result);
 });
 
+/**
+ * Request password reset (forgot password flow).
+ */
+const forgotPasswordRequest = catchAsync(async (req, res) => {
+  const { email } = req.body;
+  const result = await authService.forgotPasswordRequest(email);
+  return ApiResponse.success(res, result.message, result);
+});
+
+/**
+ * Verify OTP and reset password.
+ */
+const forgotPasswordReset = catchAsync(async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+  const result = await authService.forgotPasswordReset(email, otp, newPassword);
+  return ApiResponse.success(res, result.message, result);
+});
+
 module.exports = {
   sendOtp,
   verifyOtp,
@@ -99,4 +117,6 @@ module.exports = {
   verifyStaffInvite,
   activateStaffAccount,
   updatePushToken,
+  forgotPasswordRequest,
+  forgotPasswordReset,
 };

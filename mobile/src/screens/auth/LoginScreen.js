@@ -197,6 +197,15 @@ const LoginScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
 
+            {/* Forgot Password Link */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("ForgotPassword")}
+              style={styles.forgotBtn}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.forgotText}>Forgot Password?</Text>
+            </TouchableOpacity>
+
             {/* Error Message */}
             {error && (
               <View style={styles.errorContainer}>
@@ -218,7 +227,7 @@ const LoginScreen = ({ navigation }) => {
               {isLoading ? (
                 <ActivityIndicator color={Colors.white} size="small" />
               ) : (
-                <Text style={styles.buttonText}>Log In</Text>
+                <Text style={[styles.buttonText, (!isFormValid || isLoading) && styles.buttonTextDisabled]}>Log In</Text>
               )}
             </TouchableOpacity>
 
@@ -380,7 +389,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   button: {
-    backgroundColor: Colors.bgElevated, // Neutral dark fill (#444441)
+    backgroundColor: Colors.primary, // Teal brand active color
     height: 54,
     borderRadius: 14,
     justifyContent: "center",
@@ -388,13 +397,16 @@ const styles = StyleSheet.create({
     marginVertical: 12,
   },
   buttonDisabled: {
-    opacity: 0.5,
+    backgroundColor: Colors.bgElevated, // Light warm gray
   },
   buttonText: {
     fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 16,
     fontWeight: "500",
-    color: Colors.textPrimary,
+    color: Colors.white,
+  },
+  buttonTextDisabled: {
+    color: Colors.textMuted,
   },
   signupContainer: {
     alignItems: "center",
@@ -425,6 +437,16 @@ const styles = StyleSheet.create({
     fontFamily: "Manrope_500Medium",
     color: Colors.primary, // Teal `#1D9E75`
     fontWeight: "500",
+  },
+  forgotBtn: {
+    alignSelf: "flex-end",
+    marginBottom: 20,
+    paddingVertical: 4,
+  },
+  forgotText: {
+    fontFamily: "Manrope_400Regular",
+    fontSize: 13,
+    color: Colors.primary, // Teal `#1D9E75`
   },
 });
 

@@ -229,7 +229,7 @@ const RegisterScreen = ({ navigation }) => {
                 {isLoading ? (
                   <ActivityIndicator color={Colors.white} size="small" />
                 ) : (
-                  <Text style={styles.buttonText}>Register & Send OTP</Text>
+                  <Text style={[styles.buttonText, (!isFormValid || isLoading) && styles.buttonTextDisabled]}>Register & Send OTP</Text>
                 )}
               </TouchableOpacity>
 
@@ -282,11 +282,13 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 28,
-    fontWeight: "800",
+    fontWeight: "500",
     color: Colors.textPrimary,
   },
   subtitle: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 14,
     color: Colors.textSecondary,
     textAlign: "center",
@@ -334,8 +336,9 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   countryCodeText: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "500",
     color: Colors.textPrimary,
     marginRight: 8,
   },
@@ -345,9 +348,9 @@ const styles = StyleSheet.create({
     fontWeight: "200",
   },
   phoneInput: {
+    fontFamily: "Manrope_400Regular",
     flex: 1,
     fontSize: 16,
-    fontWeight: "500",
     color: Colors.textPrimary,
     paddingHorizontal: 8,
     letterSpacing: 0.5,
@@ -356,6 +359,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.primaryLight,
   },
   textInput: {
+    fontFamily: "Manrope_400Regular",
     flex: 1,
     fontSize: 16,
     color: Colors.textPrimary,
@@ -374,6 +378,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   errorText: {
+    fontFamily: "Manrope_400Regular",
     flex: 1,
     fontSize: 13,
     color: Colors.error,
@@ -391,10 +396,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bgElevated,
   },
   buttonText: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "500",
     color: Colors.white,
     letterSpacing: 0.5,
+  },
+  buttonTextDisabled: {
+    fontFamily: "PlusJakartaSans_500Medium",
+    color: Colors.textMuted,
   },
   loginLinkContainer: {
     alignItems: "center",
@@ -402,12 +412,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   loginLinkText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 14,
     color: Colors.textSecondary,
   },
   loginLink: {
-    color: Colors.primaryLight,
-    fontWeight: "700",
+    fontFamily: "Manrope_500Medium",
+    color: Colors.primary, // Teal brand active color
+    fontWeight: "500",
   },
 });
 

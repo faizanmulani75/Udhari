@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import Colors from "../../constants/colors";
 import { Feather } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { verifyStaffInvite, activateStaffAccount, persistAuth } from "../../services/authService";
 import useAuthStore from "../../store/authStore";
 
@@ -172,7 +173,7 @@ const StaffJoinScreen = ({ navigation }) => {
   });
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
       <Animated.View style={[styles.glowOrb, { opacity: glowOpacity }]} />
 
@@ -180,15 +181,16 @@ const StaffJoinScreen = ({ navigation }) => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
+        {/* Header Back Button */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => step === 2 ? setStep(1) : navigation.goBack()}>
+            <Feather name="chevron-left" size={24} color={Colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
+
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
             
-            {/* Header */}
-            <TouchableOpacity style={styles.backButton} onPress={() => step === 2 ? setStep(1) : navigation.goBack()}>
-              <Feather name="arrow-left" size={20} color={Colors.textSecondary} />
-              <Text style={styles.backText}>Back</Text>
-            </TouchableOpacity>
-
             <View style={styles.headerContainer}>
               <Text style={styles.title}>Join a Shop</Text>
               <Text style={styles.subtitle}>
@@ -234,7 +236,7 @@ const StaffJoinScreen = ({ navigation }) => {
                     {isLoading ? (
                       <ActivityIndicator color={Colors.white} size="small" />
                     ) : (
-                      <Text style={styles.buttonText}>Verify Invite Code</Text>
+                      <Text style={[styles.buttonText, (!inviteCode.trim() || inviteCode.length < 13 || isLoading) && styles.buttonTextDisabled]}>Verify Invite Code</Text>
                     )}
                   </TouchableOpacity>
                 </>
@@ -303,7 +305,7 @@ const StaffJoinScreen = ({ navigation }) => {
                     {isLoading ? (
                       <ActivityIndicator color={Colors.white} size="small" />
                     ) : (
-                      <Text style={styles.buttonText}>Activate & Login</Text>
+                      <Text style={[styles.buttonText, (password.length < 6 || password !== confirmPassword || isLoading) && styles.buttonTextDisabled]}>Activate & Login</Text>
                     )}
                   </TouchableOpacity>
                 </>
@@ -313,7 +315,7 @@ const StaffJoinScreen = ({ navigation }) => {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -343,28 +345,30 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 24,
   },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 24,
-    alignSelf: "flex-start",
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
-  backText: {
-    color: Colors.textSecondary,
-    fontSize: 14,
-    fontWeight: "600",
-    marginLeft: 6,
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.bgElevated,
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerContainer: {
     alignItems: "center",
     marginBottom: 28,
   },
   title: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 26,
-    fontWeight: "800",
+    fontWeight: "500",
     color: Colors.textPrimary,
   },
   subtitle: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 14,
     color: Colors.textSecondary,
     textAlign: "center",
@@ -380,8 +384,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.borderLight,
   },
   fieldLabel: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "500",
     color: Colors.textSecondary,
     marginBottom: 8,
     textTransform: "uppercase",
@@ -405,10 +410,10 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   textInput: {
+    fontFamily: "Manrope_400Regular",
     flex: 1,
     fontSize: 16,
     color: Colors.textPrimary,
-    fontWeight: "600",
   },
   eyeBtn: {
     padding: 6,
@@ -422,10 +427,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   errorText: {
+    fontFamily: "Manrope_400Regular",
     flex: 1,
     fontSize: 12,
     color: Colors.error,
-    fontWeight: "600",
     lineHeight: 16,
   },
   button: {
@@ -440,9 +445,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bgElevated,
   },
   buttonText: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: "500",
     color: Colors.white,
+  },
+  buttonTextDisabled: {
+    color: Colors.textMuted,
   },
   welcomeBanner: {
     backgroundColor: Colors.bgElevated, // Swap from bgInput to bgElevated for light theme card contrast

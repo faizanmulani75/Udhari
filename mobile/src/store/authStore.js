@@ -239,6 +239,50 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
+  forgotPasswordRequest: async (email) => {
+    set({ isLoading: true, error: null });
+    try {
+      await authService.forgotPasswordRequest(email);
+      set({
+        otpSent: true,
+        otpEmail: email,
+        isLoading: false,
+      });
+      return true;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error.response?.data?.message || error.message || "Failed to send reset code",
+      });
+      return false;
+    }
+  },
+
+  forgotPasswordReset: async (otp, newPassword) => {
+    const { otpEmail } = get();
+    if (!otpEmail) {
+      set({ error: "Email not set. Please try again." });
+      return false;
+    }
+
+    set({ isLoading: true, error: null });
+    try {
+      await authService.forgotPasswordReset(otpEmail, otp, newPassword);
+      set({
+        isLoading: false,
+        otpSent: false,
+        otpEmail: null,
+      });
+      return true;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error.response?.data?.message || error.message || "Password reset failed. Please try again.",
+      });
+      return false;
+    }
+  },
+
   /**
    * Clear any displayed error.
    */

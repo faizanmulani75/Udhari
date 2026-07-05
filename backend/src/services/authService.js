@@ -18,6 +18,9 @@ const mockOtpCache = new Map();
 // Memory cache for registration OTPs: email -> { name, phone, passwordHash, otp, expiresAt }
 const registrationCache = new Map();
 
+// Memory cache for forgot password OTPs: email -> { otp, expiresAt }
+const forgotPasswordCache = new Map();
+
 /**
  * Helper to generate a consistent UUID from a phone number for mock authId.
  * This ensures the same phone number gets the same authId in development.
@@ -731,6 +734,129 @@ const updatePushToken = async (userId, pushToken) => {
   return { success: true, message: "Push token updated successfully" };
 };
 
+/**
+ * Request forgot password OTP (sent to email).
+ * @param {string} email - User email address
+ */
+const forgotPasswordRequest = async (email) => {
+  if (!email) {
+    throw ApiError.badRequest("Email is required");
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+
+  // Verify that the user exists in DB
+  const user = await prisma.user.findFirst({
+    where: { email: cleanEmail, deletedAt: null, isActive: true },
+  });
+
+  if (!user) {
+    throw ApiError.notFound("No active account found with this email address");
+  }
+
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+
+  // Cache OTP
+  forgotPasswordCache.set(cleanEmail, { otp, expiresAt });
+
+  // Send Email using Brevo SMTP
+  const brevoApiKey = process.env.BREVO_API_KEY;
+  const senderEmail = process.env.BREVO_SENDER_EMAIL || "no-reply@udhari-tracking.vercel.app";
+
+  console.log(`📧 [Forgot Password] Generating OTP for ${cleanEmail}: OTP = ${otp}`);
+
+  if (brevoApiKey) {
+    try {
+      await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "api-key": brevoApiKey,
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({
+          sender: { name: "Udhari Security", email: senderEmail },
+          to: [{ email: cleanEmail }],
+          subject: "Udhari - Password Reset Code",
+          htmlContent: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #0d0d12; color: #e2e8f0; border-radius: 12px;">
+              <h2 style="color: #6366f1;">Password Reset Request</h2>
+              <p>You requested a password reset. Please use the verification code below to reset your password:</p>
+              <div style="font-size: 32px; font-weight: bold; color: #10b981; padding: 15px; background-color: #1e1e2f; border: 1px dashed #6366f1; border-radius: 8px; display: inline-block; letter-spacing: 4px; margin: 20px 0;">
+                ${otp}
+              </div>
+              <p style="font-size: 12px; color: #64748b;">This OTP code is valid for 5 minutes. If you did not make this request, you can safely ignore this email.</p>
+            </div>
+          `,
+        }),
+      });
+    } catch (err) {
+      console.error("❌ Failed to send forgot password email via Brevo:", err.message);
+      if (process.env.NODE_ENV === "production") {
+        throw ApiError.internal("Failed to send reset email. Please try again later.");
+      }
+    }
+  }
+
+  return { success: true, message: "Verification OTP code sent to your email" };
+};
+
+/**
+ * Verify OTP and reset password.
+ * @param {string} email - User email address
+ * @param {string} otp - Verification code
+ * @param {string} newPassword - The new password
+ */
+const forgotPasswordReset = async (email, otp, newPassword) => {
+  if (!email || !otp || !newPassword) {
+    throw ApiError.badRequest("Email, OTP code, and new password are required");
+  }
+
+  if (newPassword.length < 6) {
+    throw ApiError.badRequest("Password must be at least 6 characters long");
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const cached = forgotPasswordCache.get(cleanEmail);
+
+  if (!cached) {
+    throw ApiError.badRequest("No password reset request found or session expired");
+  }
+
+  if (Date.now() > cached.expiresAt) {
+    forgotPasswordCache.delete(cleanEmail);
+    throw ApiError.badRequest("Verification code has expired");
+  }
+
+  if (cached.otp !== otp) {
+    throw ApiError.badRequest("Invalid verification code");
+  }
+
+  // Clear OTP cache
+  forgotPasswordCache.delete(cleanEmail);
+
+  // Hash new password
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+
+  // Update in DB
+  const user = await prisma.user.findFirst({
+    where: { email: cleanEmail, deletedAt: null, isActive: true },
+  });
+
+  if (!user) {
+    throw ApiError.notFound("User not found");
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash },
+  });
+
+  return { success: true, message: "Password updated successfully. Please log in with your new password." };
+};
+
 module.exports = {
   sendOtp,
   verifyOtp,
@@ -741,5 +867,8 @@ module.exports = {
   verifyStaffInvite,
   activateStaffAccount,
   updatePushToken,
+  forgotPasswordRequest,
+  forgotPasswordReset,
+  forgotPasswordCache,
 };
 
