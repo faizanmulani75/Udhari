@@ -59,4 +59,14 @@ export const createPortalDispute = async (token, transactionId, content) => {
   return response.data;
 };
 
+export const submitPaymentClaim = async (token, amount, txnRef) => {
+  const response = await api.post(`/portal/${token}/pay/claim`, { amount, txnRef });
+  return response.data;
+};
+
+export const getCustomerClaims = async (token) => {
+  const response = await api.get(`/portal/${token}/pay/claims`);
+  return response.data;
+};
+
 export default api;
