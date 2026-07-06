@@ -119,6 +119,8 @@ const SubscriptionScreen = ({ navigation }) => {
         // Launch native Razorpay payment sheet!
         const { user } = useAuthStore.getState();
 
+        const cleanPhone = (user?.phone || "").replace(/[^\d+]/g, "");
+
         const options = {
           description: `Upgrade to ${plan} Plan`,
           image: "https://udhari-tracking.vercel.app/logo.png",
@@ -129,7 +131,7 @@ const SubscriptionScreen = ({ navigation }) => {
           order_id: orderRes.orderId,
           prefill: {
             email: user?.email || "",
-            contact: user?.phone || "",
+            contact: cleanPhone,
             name: user?.name || ""
           },
           config: {

@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 15,
-    color: Colors.white,
+    color: Colors.black,
     marginBottom: 14,
   },
   legendRow: {
@@ -594,7 +594,7 @@ const styles = StyleSheet.create({
   debtorName: {
     fontFamily: "Manrope_500Medium",
     fontSize: 13,
-    color: Colors.white,
+    color: Colors.textPrimary,
     flex: 1,
     marginRight: 8,
   },

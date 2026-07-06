@@ -427,7 +427,7 @@ const CustomerDetailScreen = ({ route, navigation }) => {
                 onPress={openTagsModal}
                 style={styles.manageTagsBtn}
               >
-                <Feather name="edit-2" size={12} color={Colors.primaryLight} style={{ marginRight: 4 }} />
+                <Feather name="edit-2" size={12} color={Colors.primary} style={{ marginRight: 4 }} />
                 <Text style={styles.manageTagsBtnText}>Manage</Text>
               </TouchableOpacity>
             </View>
@@ -845,8 +845,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   headerTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "500",
     color: Colors.textPrimary,
   },
   editButton: {
@@ -1293,7 +1294,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   manageTagsBtnText: {
-    color: Colors.primaryLight,
+    color: Colors.primary,
     fontSize: 12,
     fontWeight: "700",
   },
