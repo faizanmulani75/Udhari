@@ -132,6 +132,24 @@ const SubscriptionScreen = ({ navigation }) => {
             contact: user?.phone || "",
             name: user?.name || ""
           },
+          config: {
+            display: {
+              blocks: {
+                upi: {
+                  name: "UPI / Google Pay / PhonePe",
+                  instruments: [
+                    {
+                      method: "upi"
+                    }
+                  ]
+                }
+              },
+              sequence: ["block.upi", "block.other"],
+              preferences: {
+                show_default_blocks: true
+              }
+            }
+          },
           theme: { color: Colors.primary }
         };
 
