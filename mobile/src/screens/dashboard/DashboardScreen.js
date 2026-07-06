@@ -229,6 +229,16 @@ const DashboardScreen = ({ navigation }) => {
   useSpeechRecognitionEvent("error", (event) => {
     if (event.error !== "no-speech") {
       console.log("Speech recognition error:", event.error);
+      const isNetworkErr = event.error === "error_network" || 
+                           event.error === "network" || 
+                           event.error === "network_error" ||
+                           (typeof event.error === "string" && event.error.includes("network"));
+      if (isNetworkErr) {
+        Alert.alert(
+          "Offline Speech Not Ready 🎙️",
+          "To speak entries while offline, please download the offline English (India) speech package in:\nGoogle App -> Settings -> Voice -> Offline speech recognition.\n\nIn the meantime, you can type the transaction manually in the text field below!"
+        );
+      }
     }
     setIsListening(false);
   });

@@ -1,8 +1,6 @@
-// src/utils/syncManager.js
-// Manager to cache, retrieve, queue, and sync transactions logged during network loss.
-
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import NetInfo from "@react-native-community/netinfo";
 import Config from "../constants/config";
 import * as transactionService from "../services/transactionService";
 
@@ -13,11 +11,27 @@ const OFFLINE_KEY = "offline_transactions_queue";
  */
 export const checkOnlineStatus = async () => {
   try {
+    // 1. Check local network connection status first (instant)
+    const netState = await NetInfo.fetch();
+    if (!netState.isConnected || netState.isInternetReachable === false) {
+      console.log("🌐 checkOnlineStatus: NetInfo reports device is offline.");
+      return false;
+    }
+
+    // 2. Ping health endpoint. Give up to 45 seconds for sleeping free-tier Render servers to spin up.
     const healthUrl = `${Config.API_URL}/health`;
-    await axios.get(healthUrl, { timeout: 10000 });
+    await axios.get(healthUrl, { timeout: 45000 });
     return true;
   } catch (error) {
     console.warn("🌐 checkOnlineStatus failed. URL:", `${Config.API_URL}/health`, "Error:", error.message || error);
+    
+    // If the device is connected to the internet but the health check timed out, the backend
+    // is likely cold-starting. We assume online so sync calls can hit it and wake it up.
+    const isTimeout = error.code === 'ECONNABORTED' || (error.message && error.message.toLowerCase().includes('timeout'));
+    if (isTimeout) {
+      console.log("🌐 checkOnlineStatus: Health ping timed out. Assuming online to let cold-starting server wake up.");
+      return true;
+    }
     return false;
   }
 };

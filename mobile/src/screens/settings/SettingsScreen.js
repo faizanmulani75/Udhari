@@ -281,6 +281,62 @@ const SettingsScreen = ({ navigation }) => {
           </View>
         </View>
 
+        {/* Legal & Policies Section */}
+        <View style={styles.sectionPanel}>
+          <Text style={styles.sectionHeaderTitle}>Legal & Support</Text>
+          <View style={styles.panelRows}>
+            <TouchableOpacity style={styles.panelRowBtn} onPress={() => navigation.navigate("PolicyScreen", { type: "TERMS" })}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
+                  <Feather name="file-text" size={16} color={Colors.primary} />
+                </View>
+                <Text style={styles.rowLabel}>Terms & Conditions</Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={Colors.textMuted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.panelRowBtn} onPress={() => navigation.navigate("PolicyScreen", { type: "PRIVACY" })}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
+                  <Feather name="shield" size={16} color={Colors.primary} />
+                </View>
+                <Text style={styles.rowLabel}>Privacy Policy</Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={Colors.textMuted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.panelRowBtn} onPress={() => navigation.navigate("PolicyScreen", { type: "SHIPPING" })}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
+                  <Feather name="truck" size={16} color={Colors.primary} />
+                </View>
+                <Text style={styles.rowLabel}>Shipping Policy</Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={Colors.textMuted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.panelRowBtn} onPress={() => navigation.navigate("PolicyScreen", { type: "REFUND" })}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
+                  <Feather name="rotate-ccw" size={16} color={Colors.primary} />
+                </View>
+                <Text style={styles.rowLabel}>Cancellation & Refunds</Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={Colors.textMuted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.panelRowBtn, { borderBottomWidth: 0 }]} onPress={() => navigation.navigate("PolicyScreen", { type: "CONTACT" })}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
+                  <Feather name="mail" size={16} color={Colors.primary} />
+                </View>
+                <Text style={styles.rowLabel}>Contact Us</Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={Colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* 5. Security & Access Section */}
         <View style={styles.sectionPanel}>
           <Text style={styles.sectionHeaderTitle}>Security & Access</Text>

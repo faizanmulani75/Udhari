@@ -24,6 +24,7 @@ import AddCustomerScreen from "../screens/customers/AddCustomerScreen";
 import AddTransactionScreen from "../screens/transaction/AddTransactionScreen";
 import TransactionHistoryScreen from "../screens/transaction/TransactionHistoryScreen";
 import GlobalTransactionsScreen from "../screens/transaction/GlobalTransactionsScreen";
+import PolicyScreen from "../screens/settings/PolicyScreen";
 
 import { Feather } from "@expo/vector-icons";
 
@@ -48,6 +49,7 @@ const SettingsStackNavigator = () => {
       <SettingsStack.Screen name="Subscription" component={SubscriptionScreen} />
       <SettingsStack.Screen name="ManageStaff" component={ManageStaffScreen} />
       <SettingsStack.Screen name="AuditLog" component={AuditLogScreen} />
+      <SettingsStack.Screen name="PolicyScreen" component={PolicyScreen} />
       {/* <SettingsStack.Screen name="ReminderHistory" component={ReminderHistoryScreen} /> */}
     </SettingsStack.Navigator>
   );

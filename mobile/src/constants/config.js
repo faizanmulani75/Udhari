@@ -11,7 +11,7 @@ const Config = {
   // Local dev portal URL
   // PORTAL_URL: "http://172.27.79.146:3000",
 
-  API_URL: "http://172.27.79.146:5050/api/v1",
+  API_URL: "https://udhari-ajw3.onrender.com/api/v1",
 
   // OTP length
   OTP_LENGTH: 6,
