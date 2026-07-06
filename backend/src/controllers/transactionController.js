@@ -9,7 +9,7 @@ const ApiError = require("../utils/ApiError");
 const catchAsync = require("../utils/catchAsync");
 const prisma = require("../config/prisma");
 const { logActivity } = require("../utils/auditLogger");
-const { notifyOwner } = require("../services/notificationService");
+const { notifyAllShopUsers } = require("../services/notificationService");
 const PDFDocument = require("pdfkit");
 
 // ─── Validation Helpers ──────────────────────────────────
@@ -86,15 +86,15 @@ const addCredit = catchAsync(async (req, res) => {
     `Recorded credit of ₹${amount} for customer ${customerName}`
   );
 
-  // Notify owner if action was performed by a staff member
-  if (req.userRole && req.userRole !== "owner") {
-    notifyOwner(
-      req.shopId,
-      "💳 Credit Entry Added",
-      `Staff member recorded a credit of ₹${amount} for ${customerName}.`,
-      "TRANSACTION"
-    ).catch(() => {});
-  }
+  // Notify other shop users of this transaction
+  const creatorLabel = req.userRole === "owner" ? "Shop Owner" : "Shop Staff";
+  notifyAllShopUsers(
+    req.shopId,
+    "💳 Credit Entry Added",
+    `${creatorLabel} recorded a credit of ₹${amount} for ${customerName}.`,
+    "TRANSACTION",
+    req.userId
+  ).catch(() => {});
 
   return ApiResponse.created(res, "Udhari recorded successfully", {
     transaction: result.transaction,
@@ -147,15 +147,15 @@ const addPayment = catchAsync(async (req, res) => {
     `Recorded payment of ₹${amount} from customer ${customerName}`
   );
 
-  // Notify owner if action was performed by a staff member
-  if (req.userRole && req.userRole !== "owner") {
-    notifyOwner(
-      req.shopId,
-      "💰 Payment Recorded",
-      `Staff member recorded a payment of ₹${amount} from ${customerName}.`,
-      "TRANSACTION"
-    ).catch(() => {});
-  }
+  // Notify other shop users of this transaction
+  const creatorLabel = req.userRole === "owner" ? "Shop Owner" : "Shop Staff";
+  notifyAllShopUsers(
+    req.shopId,
+    "💰 Payment Recorded",
+    `${creatorLabel} recorded a payment of ₹${amount} from ${customerName}.`,
+    "TRANSACTION",
+    req.userId
+  ).catch(() => {});
 
   return ApiResponse.created(res, "Payment recorded successfully", {
     transaction: result.transaction,
@@ -199,15 +199,15 @@ const addDebit = catchAsync(async (req, res) => {
     `Recorded debit adjustment of ₹${amount} for customer ${customerName}`
   );
 
-  // Notify owner if action was performed by a staff member
-  if (req.userRole && req.userRole !== "owner") {
-    notifyOwner(
-      req.shopId,
-      "🔻 Debit Adjustment",
-      `Staff member recorded a debit adjustment of ₹${amount} for ${customerName}.`,
-      "TRANSACTION"
-    ).catch(() => {});
-  }
+  // Notify other shop users of this transaction
+  const creatorLabel = req.userRole === "owner" ? "Shop Owner" : "Shop Staff";
+  notifyAllShopUsers(
+    req.shopId,
+    "🔻 Debit Adjustment",
+    `${creatorLabel} recorded a debit adjustment of ₹${amount} for ${customerName}.`,
+    "TRANSACTION",
+    req.userId
+  ).catch(() => {});
 
   return ApiResponse.created(res, "Debit adjustment recorded successfully", {
     transaction: result.transaction,
@@ -312,15 +312,15 @@ const deleteTransaction = catchAsync(async (req, res) => {
     `Reversed transaction of type ${type} worth ₹${amount} for customer ${customerName}`
   );
 
-  // Notify owner if action was performed by a staff member
-  if (req.userRole && req.userRole !== "owner") {
-    notifyOwner(
-      req.shopId,
-      "⚠️ Transaction Reversed",
-      `Staff member reversed a ${type} of ₹${amount} for ${customerName}.`,
-      "TRANSACTION"
-    ).catch(() => {});
-  }
+  // Notify other shop users of this transaction
+  const creatorLabel = req.userRole === "owner" ? "Shop Owner" : "Shop Staff";
+  notifyAllShopUsers(
+    req.shopId,
+    "⚠️ Transaction Reversed",
+    `${creatorLabel} reversed a ${type} of ₹${amount} for ${customerName}.`,
+    "TRANSACTION",
+    req.userId
+  ).catch(() => {});
 
   return ApiResponse.success(res, "Transaction reversed successfully", {
     deletedTransaction: result.deletedTransaction,

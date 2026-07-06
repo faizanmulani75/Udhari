@@ -62,7 +62,18 @@ const shopContext = async (req, res, next) => {
           select: { role: true },
         });
         req.userRole = user?.role || "staff";
-      } catch (_) {
+
+        // Enforce subscription check: if user is staff (not owner) and subscription is expired or free, block access!
+        if (req.userRole !== "owner") {
+          const { getActiveSubscription } = require("../services/subscriptionService");
+          const subscription = await getActiveSubscription(shop.id);
+          // If no active subscription (expired/free), max users is 1, which means staff are not allowed to access the ledger!
+          if (!subscription || subscription.plan === "FREE") {
+            return next(ApiError.forbidden("Access denied: Shop subscription has expired. Please ask the owner to renew."));
+          }
+        }
+      } catch (err) {
+        if (err.statusCode === 403) return next(err);
         req.userRole = "staff";
       }
     }

@@ -226,6 +226,16 @@ exports.parseTransaction = async (req, res, next) => {
       });
     }
 
+    // Enforce Udhari Pro subscription check
+    const { getActiveSubscription } = require("../services/subscriptionService");
+    const subscription = await getActiveSubscription(req.shopId);
+    if (!subscription || subscription.plan === "FREE") {
+      return res.status(403).json({
+        success: false,
+        message: "Udhari AI features require an active Pro subscription. Please upgrade in Settings."
+      });
+    }
+
     const prompt = `You are an AI assistant for a shopkeeper khata bookkeeping app.
 Parse the following shop entry text (which may be in English, Hindi, Hinglish, or mixed) and extract the items/description and evaluate the total numerical amount.
 Output your response ONLY as a valid JSON object matching this schema:
@@ -286,6 +296,16 @@ exports.voiceEntry = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: "Text field is required and must be a string",
+      });
+    }
+
+    // Enforce Udhari Pro subscription check
+    const { getActiveSubscription } = require("../services/subscriptionService");
+    const subscription = await getActiveSubscription(req.shopId);
+    if (!subscription || subscription.plan === "FREE") {
+      return res.status(403).json({
+        success: false,
+        message: "Udhari AI features require an active Pro subscription. Please upgrade in Settings."
       });
     }
 

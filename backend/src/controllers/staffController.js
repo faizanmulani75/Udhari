@@ -68,13 +68,8 @@ const inviteStaff = catchAsync(async (req, res) => {
   }
 
   // Verify active subscription plan limit for users
-  const subscription = await prisma.subscription.findFirst({
-    where: {
-      shopId: req.shopId,
-      status: "ACTIVE",
-      deletedAt: null,
-    },
-  });
+  const { getActiveSubscription } = require("../services/subscriptionService");
+  const subscription = await getActiveSubscription(req.shopId);
 
   const maxUsers = subscription ? subscription.maxUsers : 1; // Default to 1 (Free)
 

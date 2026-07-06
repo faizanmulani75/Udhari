@@ -148,13 +148,13 @@ const PolicyScreen = ({ route, navigation }) => {
   const policy = getContent();
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.bgDark} />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Feather name="arrow-left" size={22} color={Colors.dark} />
+          <Feather name="chevron-left" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{policy.title}</Text>
         <View style={{ width: 40 }} />
@@ -187,19 +187,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderColor: Colors.borderLight,
-    backgroundColor: Colors.bgCard,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 0.5,
+    borderColor: Colors.border,
   },
   backBtn: {
-    padding: 4,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.bgElevated,
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "800",
-    color: Colors.dark,
+    fontFamily: "PlusJakartaSans_500Medium",
+    color: Colors.textPrimary,
     flex: 1,
     textAlign: "center",
   },
@@ -211,15 +215,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textMuted,
     marginBottom: 20,
-    fontWeight: "600",
+    fontFamily: "Manrope_400Regular",
   },
   card: {
     backgroundColor: Colors.bgCard,
     borderRadius: 16,
     padding: 18,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.02,
@@ -228,13 +232,14 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: "PlusJakartaSans_500Medium",
     color: Colors.textPrimary,
     marginBottom: 8,
   },
   body: {
     fontSize: 14,
     color: Colors.textSecondary,
+    fontFamily: "Manrope_400Regular",
     lineHeight: 22,
   },
   footer: {
@@ -244,6 +249,7 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 12,
     color: Colors.textMuted,
+    fontFamily: "Manrope_400Regular",
   },
 });
 

@@ -90,17 +90,21 @@ const createShop = async (authId, userPhone, data) => {
       });
     }
 
-    // C. Provision default FREE subscription plan
+    // C. Provision default 1-month FREE PRO trial subscription plan
+    const trialExpiry = new Date();
+    trialExpiry.setDate(trialExpiry.getDate() + 30); // 30 days trial
+
     await tx.subscription.create({
       data: {
         shopId: shop.id,
-        plan: "FREE",
+        plan: "PRO",
         status: "ACTIVE",
-        maxCustomers: 10,
-        maxUsers: 1,
-        amount: 0.0,
+        maxCustomers: 99999, // Unlimited
+        maxUsers: 5,
+        amount: 0.0, // Free trial
         currency,
         billingCycle: "monthly",
+        expiresAt: trialExpiry,
       },
     });
 

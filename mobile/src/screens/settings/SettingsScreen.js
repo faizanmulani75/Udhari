@@ -129,7 +129,9 @@ const SettingsScreen = ({ navigation }) => {
           </View>
           <View style={styles.profileMeta}>
             <Text style={styles.profileName}>{user?.name || "Shop Owner"}</Text>
-            <Text style={styles.profileRole}>System {user?.role || "owner"}</Text>
+            <Text style={styles.profileRole}>
+              {user?.role === "owner" ? "Shop Owner" : user?.role === "staff" ? "Shop Staff" : `Shop ${user?.role || "Owner"}`}
+            </Text>
           </View>
         </View>
 
@@ -438,9 +440,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    fontWeight: "800",
-    color: Colors.dark,
+    color: Colors.textPrimary,
   },
   scrollContent: {
     padding: 20,

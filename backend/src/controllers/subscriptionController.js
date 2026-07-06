@@ -13,16 +13,8 @@ exports.getSubscription = async (req, res, next) => {
   try {
     const shopId = req.shopId;
 
-    const subscription = await prisma.subscription.findFirst({
-      where: {
-        shopId,
-        status: "ACTIVE",
-        deletedAt: null,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    const { getActiveSubscription } = require("../services/subscriptionService");
+    const subscription = await getActiveSubscription(shopId);
 
     if (!subscription) {
       return res.json({
@@ -55,7 +47,7 @@ exports.upgradeSubscription = async (req, res, next) => {
     const shopId = req.shopId;
     const { plan } = req.body; // 'FREE', 'BASIC', 'PRO'
 
-    if (!["FREE", "BASIC", "PRO"].includes(plan)) {
+    if (!["FREE", "PRO"].includes(plan)) {
       throw ApiError.badRequest("Invalid subscription plan");
     }
 
@@ -64,14 +56,10 @@ exports.upgradeSubscription = async (req, res, next) => {
     let maxUsers = 1;
     let amount = 0.00;
 
-    if (plan === "BASIC") {
-      maxCustomers = 100;
-      maxUsers = 2;
-      amount = 299.00;
-    } else if (plan === "PRO") {
+    if (plan === "PRO") {
       maxCustomers = 99999; // Unlimited
       maxUsers = 5;
-      amount = 999.00;
+      amount = 299.00; // Rs. 299/mo
     }
 
     const expiresAt = new Date();
@@ -123,17 +111,12 @@ exports.createOrder = async (req, res, next) => {
     const { plan } = req.body;
     const shopId = req.shopId;
 
-    if (!["BASIC", "PRO"].includes(plan)) {
+    if (plan !== "PRO") {
       throw ApiError.badRequest("Invalid subscription plan selected");
     }
 
     // Determine pricing in INR paise (1 INR = 100 paise)
-    let amount = 0;
-    if (plan === "BASIC") {
-      amount = 29900; // Rs. 299
-    } else if (plan === "PRO") {
-      amount = 99900; // Rs. 999
-    }
+    let amount = 29900; // Rs. 299 for PRO plan
 
     if (isMockMode) {
       // Return a simulated order structure
@@ -181,7 +164,7 @@ exports.verifyPayment = async (req, res, next) => {
     const shopId = req.shopId;
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, plan } = req.body;
 
-    if (!["BASIC", "PRO"].includes(plan)) {
+    if (plan !== "PRO") {
       throw ApiError.badRequest("Invalid subscription plan");
     }
 
@@ -204,51 +187,8 @@ exports.verifyPayment = async (req, res, next) => {
       }
     }
 
-    // Determine limits
-    let maxCustomers = 10;
-    let maxUsers = 1;
-    let amount = 0.00;
-
-    if (plan === "BASIC") {
-      maxCustomers = 100;
-      maxUsers = 2;
-      amount = 299.00;
-    } else if (plan === "PRO") {
-      maxCustomers = 99999;
-      maxUsers = 5;
-      amount = 999.00;
-    }
-
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days billing cycle
-
-    const updatedSubscription = await prisma.$transaction(async (tx) => {
-      // 1. Deactivate current active subscriptions
-      await tx.subscription.updateMany({
-        where: {
-          shopId,
-          status: "ACTIVE",
-        },
-        data: {
-          status: "CANCELLED",
-          cancelledAt: new Date(),
-        },
-      });
-
-      // 2. Create the new subscription
-      return await tx.subscription.create({
-        data: {
-          shopId,
-          plan,
-          status: "ACTIVE",
-          maxCustomers,
-          maxUsers,
-          amount,
-          billingCycle: "monthly",
-          expiresAt,
-        },
-      });
-    });
+    const { activateSubscription } = require("../services/subscriptionService");
+    const updatedSubscription = await activateSubscription(shopId, plan);
 
     return res.json({
       success: true,

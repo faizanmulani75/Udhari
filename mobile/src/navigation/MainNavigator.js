@@ -111,7 +111,7 @@ const TabNavigator = () => {
         tabBarIcon: ({ focused }) => {
           let iconName = "bar-chart-2";
           if (route.name === "Dashboard") iconName = "bar-chart-2";
-          else if (route.name === "Analytics") iconName = "pie-chart";
+          else if (route.name === "PendingClaims") iconName = "check-circle";
           else if (route.name === "Customers") iconName = "users";
           else if (route.name === "Settings") iconName = "settings";
 
@@ -125,9 +125,9 @@ const TabNavigator = () => {
         options={{ tabBarLabel: "Khata Summary" }}
       />
       <Tab.Screen 
-        name="Analytics" 
-        component={AnalyticsScreen} 
-        options={{ tabBarLabel: "Hisaab Graph" }}
+        name="PendingClaims" 
+        component={PendingClaimsScreen} 
+        options={{ tabBarLabel: "Pending Confirm" }}
       />
       <Tab.Screen 
         name="Customers" 
@@ -188,8 +188,8 @@ const MainNavigator = () => {
         options={{ animation: "slide_from_right" }}
       />
       <RootStack.Screen
-        name="PendingClaims"
-        component={PendingClaimsScreen}
+        name="Analytics"
+        component={AnalyticsScreen}
         options={{ animation: "slide_from_right" }}
       />
     </RootStack.Navigator>

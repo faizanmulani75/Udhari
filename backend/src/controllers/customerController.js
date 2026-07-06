@@ -18,13 +18,8 @@ const createCustomer = catchAsync(async (req, res) => {
   const { name, phone, email, address, notes, creditLimit, reminderInterval } = req.body;
 
   // Enforce subscription plan customer limits
-  const subscription = await prisma.subscription.findFirst({
-    where: {
-      shopId: req.shopId,
-      status: "ACTIVE",
-      deletedAt: null,
-    },
-  });
+  const { getActiveSubscription } = require("../services/subscriptionService");
+  const subscription = await getActiveSubscription(req.shopId);
 
   const maxCustomers = subscription ? subscription.maxCustomers : 10;
 

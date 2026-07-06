@@ -30,7 +30,8 @@ const useTransactionStore = create((set, get) => ({
 
     try {
       const response = await transactionService.getCustomerTransactions(customerId, params);
-      const { transactions, meta } = response.data;
+      const transactions = response.data?.transactions || [];
+      const meta = response.meta;
 
       set((state) => ({
         transactions: append ? [...state.transactions, ...transactions] : transactions,
@@ -55,7 +56,8 @@ const useTransactionStore = create((set, get) => ({
 
     try {
       const response = await transactionService.getShopTransactions(params);
-      const { transactions, meta } = response.data;
+      const transactions = response.data || [];
+      const meta = response.meta;
 
       set((state) => ({
         transactions: append ? [...state.transactions, ...transactions] : transactions,

@@ -754,14 +754,14 @@ const DashboardScreen = ({ navigation }) => {
                   <Text style={[styles.quickActionBtnText, { color: "#7A4B05" }]}>New Grahak</Text>
                 </TouchableOpacity>
 
-                {/* Analytics */}
+                {/* Pending Confirmations */}
                 <TouchableOpacity
                   style={[styles.quickActionBtn, { backgroundColor: Colors.bgElevated }]}
-                  onPress={() => navigation.navigate("Analytics")}
+                  onPress={() => navigation.navigate("PendingClaims")}
                   activeOpacity={0.8}
                 >
-                  <Feather name="pie-chart" size={18} color={Colors.textPrimary} />
-                  <Text style={[styles.quickActionBtnText, { color: Colors.textPrimary }]}>Hisaab Graph</Text>
+                  <Feather name="check-circle" size={18} color={Colors.textPrimary} />
+                  <Text style={[styles.quickActionBtnText, { color: Colors.textPrimary }]}>Pending Confirm</Text>
                 </TouchableOpacity>
               </View>
             </View>

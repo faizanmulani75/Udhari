@@ -138,8 +138,11 @@ const ManageStaffScreen = ({ navigation }) => {
 
   const handleShareWhatsApp = (member) => {
     if (!member) return;
-    const msg = `Namaste! You have been invited to join ${shop?.name || "our shop"} on Udhari. Please download the app, tap "Join a Shop" on the login screen, and enter this Invite Code:\n\n👉 *${member.inviteCode}*\n\nThis code is valid for 48 hours. Please set your password to log in.`;
-    const url = `whatsapp://send?text=${encodeURIComponent(msg)}`;
+    const msg = `Namaste! You have been invited to join ${shop?.name || "our shop"} on Udhari. Please download the app from https://udhari-tracking.vercel.app/, \n\ntap "Join a Shop" on the login screen, and enter this Invite Code:\n\n👉 *${member.inviteCode}*\n\nThis code is valid for 48 hours. Please set your password to log in.`;
+    const cleanPhone = member.phone ? member.phone.replace(/[^0-9]/g, "") : "";
+    const url = cleanPhone
+      ? `whatsapp://send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`
+      : `whatsapp://send?text=${encodeURIComponent(msg)}`;
     Linking.openURL(url).catch(() => {
       Alert.alert("WhatsApp Not Installed", "Could not open WhatsApp. Copied code to clipboard instead.");
       Clipboard.setString(member.inviteCode);
@@ -349,7 +352,7 @@ const ManageStaffScreen = ({ navigation }) => {
                         }}
                         style={styles.copyBtnSmall}
                       >
-                        <Feather name="copy" size={13} color={Colors.primaryLight} />
+                        <Feather name="copy" size={13} color={Colors.primary} />
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={() => handleShareWhatsApp(member)}
@@ -369,7 +372,7 @@ const ManageStaffScreen = ({ navigation }) => {
                         onPress={() => handleRegenerateInviteCode(member.id)}
                         style={styles.regenerateBtn}
                       >
-                        <Feather name="refresh-cw" size={12} color={Colors.primaryLight} />
+                        <Feather name="refresh-cw" size={12} color={Colors.primary} />
                         <Text style={styles.regenerateBtnText}>Regenerate</Text>
                       </TouchableOpacity>
                     </View>
@@ -512,8 +515,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    fontWeight: "800",
     color: Colors.textPrimary,
   },
   placeholder: {
@@ -534,14 +537,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   limitLabel: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 13,
     color: Colors.textSecondary,
-    fontWeight: "700",
   },
   limitValue: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 13,
     color: Colors.textPrimary,
-    fontWeight: "800",
   },
   progressBarBg: {
     height: 6,
@@ -556,6 +559,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   limitFooterText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
     color: Colors.textMuted,
   },
@@ -565,9 +569,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loaderText: {
+    fontFamily: "Manrope_500Medium",
     color: Colors.textSecondary,
     fontSize: 14,
-    fontWeight: "700",
     marginTop: 12,
   },
   scrollContent: {
@@ -604,8 +608,8 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   avatarMiniText: {
+    fontFamily: "PlusJakartaSans_500Medium",
     color: Colors.primary,
-    fontWeight: "800",
     fontSize: 14,
   },
   staffDetails: {
@@ -618,8 +622,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   staffName: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 15,
-    fontWeight: "800",
     color: Colors.textPrimary,
   },
   roleBadge: {
@@ -720,8 +724,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    fontWeight: "800",
     color: Colors.textPrimary,
   },
   closeModalBtn: {
@@ -733,14 +737,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   inputLabel: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 11,
-    fontWeight: "700",
     color: Colors.textSecondary,
     marginBottom: 6,
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },
   textInput: {
+    fontFamily: "Manrope_400Regular",
     backgroundColor: Colors.bgInput,
     borderRadius: 14,
     color: Colors.textPrimary,
@@ -769,13 +774,13 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   inviteCodeLabel: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 12,
     color: Colors.textSecondary,
-    fontWeight: "700",
   },
   inviteCodeVal: {
     fontSize: 14,
-    color: Colors.primaryLight,
+    color: Colors.primary,
     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
     fontWeight: "800",
     letterSpacing: 0.5,
@@ -791,9 +796,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   expiryText: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 11,
     color: Colors.textMuted,
-    fontWeight: "600",
   },
   regenerateBtn: {
     flexDirection: "row",
@@ -806,9 +811,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.borderLight,
   },
   regenerateBtnText: {
+    fontFamily: "Manrope_500Medium",
     fontSize: 11,
-    color: Colors.primaryLight,
-    fontWeight: "700",
+    color: Colors.primary,
     marginLeft: 4,
   },
   successHeader: {
@@ -825,12 +830,13 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   successTitle: {
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 20,
-    fontWeight: "800",
     color: Colors.textPrimary,
     marginBottom: 4,
   },
   successSub: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 13,
     color: Colors.textSecondary,
     textAlign: "center",
@@ -848,16 +854,16 @@ const styles = StyleSheet.create({
   },
   showcaseCode: {
     fontSize: 24,
-    color: Colors.primaryLight,
+    color: Colors.primary,
     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
     fontWeight: "800",
     letterSpacing: 1.5,
     marginBottom: 8,
   },
   showcaseExpiry: {
+    fontFamily: "Manrope_400Regular",
     fontSize: 12,
     color: Colors.textMuted,
-    fontWeight: "600",
   },
   successActionWrapper: {
     flexDirection: "row",
@@ -881,8 +887,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.success,
   },
   actionBtnText: {
+    fontFamily: "Manrope_500Medium",
     color: Colors.white,
-    fontWeight: "700",
     fontSize: 14,
   },
   doneBtn: {

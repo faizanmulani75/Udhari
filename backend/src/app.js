@@ -58,6 +58,7 @@ const tagRoutes = require("./routes/tagRoutes");
 const noteRoutes = require("./routes/noteRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const paymentClaimRoutes = require("./routes/paymentClaimRoutes");
+const webhookRoutes = require("./routes/webhookRoutes");
 const sanitizeInput = require("./middleware/sanitizeInput");
 
 const app = express();
@@ -69,7 +70,16 @@ app.use(cors());
 app.use(compression());
 app.use(requestLogger);
 app.use(globalLimiter);
-app.use(express.json({ limit: "10mb" }));
+app.use(
+  express.json({
+    limit: "10mb",
+    verify: (req, res, buf, encoding) => {
+      if (req.originalUrl && req.originalUrl.includes("/webhooks")) {
+        req.rawBody = buf.toString(encoding || "utf8");
+      }
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true }));
 app.use(sanitizeInput);
 
@@ -94,6 +104,9 @@ app.use("/api/v1/shops", shopRoutes);
 
 // Public Customer Portal routes (authenticated by qrToken)
 app.use("/api/v1/portal", portalRoutes);
+
+// Webhooks (public for payment gateway notifications, signature-secured)
+app.use("/api/v1/webhooks", webhookRoutes);
 
 // AI helpers (protected)
 app.use("/api/v1/ai", authMiddleware, aiRoutes);

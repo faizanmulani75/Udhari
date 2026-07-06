@@ -206,25 +206,9 @@ const SubscriptionScreen = ({ navigation }) => {
       limitText: "Max 10 customers",
     },
     {
-      id: "BASIC",
-      name: "Basic Plan",
-      price: "₹299",
-      cycle: "/mo",
-      color: Colors.primary,
-      badgeColor: "rgba(108, 92, 231, 0.15)",
-      features: [
-        "Up to 100 customers limit",
-        "Up to 2 staff user accounts",
-        "Continuous speech voice entries",
-        "Multi-language reminder templates",
-        "Prioritized customer statements download",
-      ],
-      limitText: "Max 100 customers",
-    },
-    {
       id: "PRO",
       name: "Pro Plan",
-      price: "₹999",
+      price: "₹299",
       cycle: "/mo",
       color: Colors.success,
       badgeColor: "rgba(0, 184, 148, 0.15)",
@@ -264,7 +248,7 @@ const SubscriptionScreen = ({ navigation }) => {
             <View style={styles.activePlanHeader}>
               <View>
                 <Text style={styles.subLabel}>Current Active Plan</Text>
-                <Text style={[styles.activePlanName, { color: currentPlan === "PRO" ? Colors.success : currentPlan === "BASIC" ? Colors.primaryLight : Colors.textPrimary }]}>
+                <Text style={[styles.activePlanName, { color: currentPlan === "PRO" ? Colors.success : Colors.textPrimary }]}>
                   {currentPlan} PLAN
                 </Text>
               </View>
@@ -279,13 +263,13 @@ const SubscriptionScreen = ({ navigation }) => {
               <View style={styles.statCol}>
                 <Text style={styles.statLabel}>Customer limit</Text>
                 <Text style={styles.statValue}>
-                  {currentPlan === "PRO" ? "Unlimited" : currentPlan === "BASIC" ? "100" : "10"}
+                  {currentPlan === "PRO" ? "Unlimited" : "10"}
                 </Text>
               </View>
               <View style={styles.statCol}>
                 <Text style={styles.statLabel}>Staff accounts</Text>
                 <Text style={styles.statValue}>
-                  {currentPlan === "PRO" ? "5 Users" : currentPlan === "BASIC" ? "2 Users" : "1 User"}
+                  {currentPlan === "PRO" ? "5 Users" : "1 User"}
                 </Text>
               </View>
               {subscriptionDetails?.expiresAt && (
