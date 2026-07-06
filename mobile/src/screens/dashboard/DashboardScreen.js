@@ -24,7 +24,7 @@ import useAuthStore from "../../store/authStore";
 import useShopStore from "../../store/shopStore";
 import Colors from "../../constants/colors";
 import { formatCurrency, formatDate } from "../../utils/format";
-import { getOfflineTransactions, syncQueuedTransactions } from "../../utils/syncManager";
+import { getOfflineTransactions, syncQueuedTransactions, checkOnlineStatus } from "../../utils/syncManager";
 import { sendBulkReminders } from "../../services/reminderService";
 import { voiceEntry } from "../../services/transactionService";
 import useTransactionStore from "../../store/transactionStore";
@@ -43,6 +43,135 @@ try {
 } catch (e) {
   console.warn("expo-speech-recognition native module not available.");
 }
+
+const localVoiceEntryParse = (text, customers) => {
+  let amount = 0;
+  const priceRegex = /(?:rs\.?\s*|₹\s*|rupees\s*)?(\d+(?:\.\d{1,2})?)(?:\s*(?:rs\.?|rupees|r|₹))?/gi;
+  const unitRegex = /^\s*(?:kg|g|l|ml|packet|packets|pc|pcs|piece|pieces|litre|litres|liter|liters|box|boxes|pkt|pkts|dozen|doz|bag|bags|meter|meters|m|ft|inch|inches)\b/i;
+  
+  let match;
+  let matches = [];
+  let sanitizedText = text;
+  
+  while ((match = priceRegex.exec(text)) !== null) {
+    const val = parseFloat(match[1]);
+    if (!isNaN(val) && val > 0) {
+      const matchIndex = match.index;
+      const numMatch = match[1];
+      const numPos = match[0].indexOf(numMatch);
+      const afterNumIndex = matchIndex + numPos + numMatch.length;
+      const suffix = text.substring(afterNumIndex);
+      
+      if (unitRegex.test(suffix)) {
+        continue;
+      }
+      matches.push({ text: match[0], val });
+    }
+  }
+  
+  matches.sort((a, b) => b.text.length - a.text.length);
+  for (const item of matches) {
+    sanitizedText = sanitizedText.replace(item.text, "");
+    amount += item.val;
+  }
+  
+  let description = sanitizedText
+    .replace(/\s+/g, " ")
+    .replace(/,\s*,/g, ",")
+    .replace(/^(?:and|for|•|\s|,)+|(?:and|for|•|\s|,)+$/gi, "")
+    .trim();
+  
+  if (!description) {
+    description = text;
+  }
+
+  const textLower = text.toLowerCase();
+  const isPayment = textLower.includes("paid") || 
+                    textLower.includes("received") || 
+                    textLower.includes("mila") || 
+                    textLower.includes("jama") || 
+                    textLower.includes("payment") || 
+                    textLower.includes("settle") || 
+                    textLower.includes("back") ||
+                    textLower.includes("received");
+  
+  const type = isPayment ? "PAYMENT" : "CREDIT";
+
+  let matchedCustomerName = null;
+  const matchingCustomers = [];
+
+  for (const c of customers) {
+    if (textLower.includes(c.name.toLowerCase())) {
+      matchingCustomers.push(c);
+    }
+  }
+
+  if (matchingCustomers.length === 0) {
+    for (const c of customers) {
+      const parts = c.name.split(/\s+/);
+      if (parts.length > 0) {
+        const firstName = parts[0].toLowerCase();
+        if (firstName.length >= 3 && textLower.includes(firstName)) {
+          matchingCustomers.push(c);
+        }
+      }
+    }
+  }
+
+  if (matchingCustomers.length === 1) {
+    return {
+      success: true,
+      action: "TRANSACTION_CREATED",
+      data: {
+        customer: matchingCustomers[0],
+        amount,
+        description,
+        type
+      }
+    };
+  } else if (matchingCustomers.length > 1) {
+    return {
+      success: true,
+      action: "SELECT_CUSTOMER",
+      data: {
+        amount,
+        description,
+        type,
+        candidates: matchingCustomers
+      }
+    };
+  } else {
+    const stopWords = new Set(["and", "the", "for", "milk", "tea", "biscuit", "biscuits", "groceries", "grocery", "sugar", "chawal", "rice", "wheat", "atta", "oil", "shop", "khata", "book", "entry", "voice", "water", "rent", "bill"]);
+    const words = text
+      .replace(priceRegex, "")
+      .replace(/\b(?:rs\.?|rupees|r|₹|amount|rupe|rupiya|rupiye|cash|online|gpay|paytm|phonepe)\b/gi, "")
+      .replace(/\b(?:gave|give|paid|pay|deya|diya|diye|diyo|dinha|din|sent|lent|borrowed|added|add|credit|udhar|udhari)\b/gi, "")
+      .replace(/\b(?:received|recieved|recv|mila|jama|aaya|aaye|payment|settle|back|return|returned|returning)\b/gi, "")
+      .replace(/\b(?:to|from|for|of|ko|se|ne|ka|ki|ke|on|at|in|with)\b/gi, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .split(/\s+/);
+    
+    for (const word of words) {
+      const cleanWord = word.replace(/[^a-zA-Z]/g, "");
+      if (cleanWord.length >= 3 && !stopWords.has(cleanWord.toLowerCase())) {
+        matchedCustomerName = cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1).toLowerCase();
+        break;
+      }
+    }
+
+    return {
+      success: true,
+      action: "CUSTOMER_NOT_FOUND",
+      data: {
+        customerName: matchedCustomerName || "New Customer",
+        amount,
+        description,
+        type
+      }
+    };
+  }
+};
 
 const DashboardScreen = ({ navigation }) => {
   const { user } = useAuthStore();
@@ -71,7 +200,7 @@ const DashboardScreen = ({ navigation }) => {
   const [isCandidateModalVisible, setIsCandidateModalVisible] = useState(false);
 
   const { addCredit, addPayment } = useTransactionStore();
-  const { createCustomer } = useCustomerStore();
+  const { createCustomer, customers } = useCustomerStore();
   const { unreadCount, fetchUnreadCount } = useNotificationStore();
   const [pendingClaimsCount, setPendingClaimsCount] = useState(0);
 
@@ -188,6 +317,64 @@ const DashboardScreen = ({ navigation }) => {
 
     setIsVoiceProcessing(true);
     try {
+      const isOnline = await checkOnlineStatus();
+      if (!isOnline) {
+        // Run offline local parsing heuristics directly on the device
+        console.log("[VoiceEntry] Device is offline. Using local parser fallback.");
+        const localRes = localVoiceEntryParse(voiceTranscript, customers);
+        
+        if (localRes && localRes.success) {
+          if (localRes.action === "SELECT_CUSTOMER") {
+            setVoiceParsedData({
+              amount: localRes.data.amount,
+              description: localRes.data.description,
+              type: localRes.data.type
+            });
+            setCandidates(localRes.data.candidates);
+            setIsVoiceModalVisible(false);
+            setIsCandidateModalVisible(true);
+          } else if (localRes.action === "TRANSACTION_CREATED") {
+            setIsVoiceModalVisible(false);
+            const matchedCustomer = localRes.data.customer;
+            const txnData = {
+              amount: localRes.data.amount,
+              description: localRes.data.description || undefined
+            };
+
+            // Call store methods directly to queue the transaction offline
+            let finalRes;
+            if (localRes.data.type === "PAYMENT") {
+              finalRes = await addPayment(matchedCustomer.id, txnData);
+            } else {
+              finalRes = await addCredit(matchedCustomer.id, txnData);
+            }
+
+            if (finalRes) {
+              Alert.alert(
+                "Offline Transaction Queued ⏳",
+                `Recorded ${localRes.data.type} entry of ${formatCurrency(parseFloat(txnData.amount), currencyCode)} for ${matchedCustomer.name}. It will sync when internet returns.`
+              );
+              fetchDashboard();
+              // Update offline badge count
+              const offlineTxs = await getOfflineTransactions();
+              setPendingSyncCount(offlineTxs.length);
+            }
+          } else if (localRes.action === "CUSTOMER_NOT_FOUND") {
+            setNewCustomerData({
+              name: localRes.data.customerName,
+              amount: localRes.data.amount,
+              description: localRes.data.description,
+              type: localRes.data.type
+            });
+            setNewCustomerPhone("");
+            setIsVoiceModalVisible(false);
+            setIsNewCustomerModalVisible(true);
+          }
+        }
+        return;
+      }
+
+      // Online: Send to backend API for AI parsing (Groq / Gemini)
       const res = await voiceEntry(voiceTranscript);
 
       if (res && res.success) {

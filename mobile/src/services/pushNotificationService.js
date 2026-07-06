@@ -3,7 +3,7 @@
 
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
-import { Platform } from "react-native";
+import { Platform, Alert } from "react-native";
 import Constants from "expo-constants";
 import api from "./api";
 
@@ -45,7 +45,7 @@ export const registerForPushNotificationsAsync = async () => {
 
     // Get the Expo Push Token
     
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId || Constants.easConfig?.projectId;
+    const projectId = "1d1be6a8-4b7f-4e79-9599-863369e752fd";
     const tokenData = await Notifications.getExpoPushTokenAsync({
       projectId,
     });
@@ -57,7 +57,7 @@ export const registerForPushNotificationsAsync = async () => {
     console.log("🚀 Sync'd push token successfully with database.");
 
   } catch (error) {
-    console.warn("Failed to register/sync push token:", error);
+    Alert.alert("Push Notification Setup Failed", error.message || String(error));
   }
 
   // Setup channel for Android notifications

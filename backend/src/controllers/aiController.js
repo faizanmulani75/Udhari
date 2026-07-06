@@ -55,6 +55,92 @@ const localFallbackParse = (text) => {
   return { amount, description };
 };
 
+const callGroqAPI = async (promptText) => {
+  const groqApiKey = process.env.GROQ_API_KEY;
+  if (!groqApiKey || groqApiKey.trim() === "" || groqApiKey === "your_groq_api_key_here") {
+    return null;
+  }
+
+  const models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"];
+  let lastError = null;
+
+  for (const model of models) {
+    try {
+      const response = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${groqApiKey.trim()}`,
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [
+              {
+                role: "user",
+                content: promptText,
+              }
+            ],
+            temperature: 0.1,
+            response_format: { type: "json_object" },
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.warn(`[Groq] API failed for model ${model} (status ${response.status}): ${errorText}`);
+        lastError = new Error(`Groq API responded with status ${response.status}: ${errorText}`);
+        continue;
+      }
+
+      const json = await response.json();
+      const outputText = json.choices?.[0]?.message?.content;
+
+      if (!outputText) {
+        console.warn(`[Groq] Invalid response structure from Groq API for model ${model}.`);
+        lastError = new Error("Invalid response structure from Groq API");
+        continue;
+      }
+
+      let cleanText = outputText.trim();
+      if (cleanText.startsWith("```")) {
+        cleanText = cleanText.replace(/^```(?:json)?\n?|```$/g, "").trim();
+      }
+
+      console.log(`[Groq] Successfully parsed using model: ${model}`);
+      return JSON.parse(cleanText);
+    } catch (err) {
+      console.warn(`[Groq] Error using Groq API for model ${model}: ${err.message}`);
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error("All configured Groq models failed");
+};
+
+const callAIWithFallback = async (promptText) => {
+  // 1. Try Groq first if configured
+  if (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY.trim() !== "" && process.env.GROQ_API_KEY !== "your_groq_api_key_here") {
+    try {
+      const data = await callGroqAPI(promptText);
+      if (data) {
+        return { data, source: "groq" };
+      }
+    } catch (err) {
+      console.warn("[AI] Groq call failed, falling back to Gemini:", err.message);
+    }
+  }
+
+  // 2. Fall back to Gemini
+  const data = await callGeminiWithFallback(promptText);
+  if (data) {
+    return { data, source: "gemini" };
+  }
+  return null;
+};
+
 const callGeminiWithFallback = async (promptText) => {
   const keys = [];
   if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== "" && process.env.GEMINI_API_KEY !== "your_gemini_api_key_here") {
@@ -150,16 +236,16 @@ Output your response ONLY as a valid JSON object matching this schema:
 
 Input text: "${text}"`;
 
-    let parsedData = null;
+    let parsedResult = null;
     let fallbackSource = "local-fallback";
     try {
-      parsedData = await callGeminiWithFallback(prompt);
+      parsedResult = await callAIWithFallback(prompt);
     } catch (err) {
       console.error("AI parse transaction failed using all keys:", err);
       fallbackSource = "local-fallback-error";
     }
 
-    if (!parsedData) {
+    if (!parsedResult || !parsedResult.data) {
       // Use local fallback parser when API key is missing or all configured keys failed
       const result = localFallbackParse(text);
       return res.json({
@@ -171,10 +257,10 @@ Input text: "${text}"`;
 
     return res.json({
       success: true,
-      source: "gemini",
+      source: parsedResult.source,
       data: {
-        amount: Number(parsedData.amount) || 0,
-        description: parsedData.description || text,
+        amount: Number(parsedResult.data.amount) || 0,
+        description: parsedResult.data.description || text,
       },
     });
 
@@ -224,18 +310,18 @@ Input text: "${text}"`;
     console.log(`[VoiceEntry] Received text: "${text}"`);
 
     try {
-      const data = await callGeminiWithFallback(prompt);
-      if (data) {
+      const result = await callAIWithFallback(prompt);
+      if (result && result.data) {
         parsedData = {
-          customerName: data.customerName || null,
-          amount: Number(data.amount) || 0,
-          description: data.description || "",
-          type: data.type === "PAYMENT" ? "PAYMENT" : "CREDIT"
+          customerName: result.data.customerName || null,
+          amount: Number(result.data.amount) || 0,
+          description: result.data.description || "",
+          type: result.data.type === "PAYMENT" ? "PAYMENT" : "CREDIT"
         };
-        console.log(`[VoiceEntry] Gemini parser succeeded:`, parsedData);
+        console.log(`[VoiceEntry] ${result.source} parser succeeded:`, parsedData);
       }
     } catch (err) {
-      console.error("[VoiceEntry] Gemini parser failed, falling back to local parsing:", err.message);
+      console.error("[VoiceEntry] AI parser failed, falling back to local parsing:", err.message);
     }
 
     // Smart Local Fallback

@@ -31,8 +31,8 @@ apiClient.interceptors.response.use(
           return Promise.resolve({ data: cachedData, status: 200, fromCache: true });
         }
       } else if (['post', 'put', 'patch', 'delete'].includes(method)) {
-        // Never queue auth requests — they are time-sensitive (OTPs, credentials)
-        const AUTH_SKIP_PATTERNS = ['/auth/', '/forgot-password', '/send-otp', '/verify-otp', '/login'];
+        // Never queue auth or AI requests — they are time-sensitive or require real-time server processing
+        const AUTH_SKIP_PATTERNS = ['/auth/', '/forgot-password', '/send-otp', '/verify-otp', '/login', '/ai/'];
         const isAuthRequest = AUTH_SKIP_PATTERNS.some(p => (originalRequest.url || '').includes(p));
         if (isAuthRequest) {
           // Let the error propagate normally so the UI can show a proper "no internet" message

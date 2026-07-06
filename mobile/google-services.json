@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "317105375142",
+    "project_id": "udhari-tracker",
+    "storage_bucket": "udhari-tracker.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:317105375142:android:ed642789f7c11341857167",
+        "android_client_info": {
+          "package_name": "com.udharitracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLd9rWKlVdLnRp7anGDHHVaNt8T3Hgd6E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
