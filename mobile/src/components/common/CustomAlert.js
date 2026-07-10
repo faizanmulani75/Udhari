@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   LayoutAnimation,
+  Platform,
 } from "react-native";
 import Colors from "../../constants/colors";
 
@@ -42,12 +43,16 @@ export const CustomAlert = () => {
       options,
     });
     setVisible(true);
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (Platform.OS !== "ios") {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    }
   };
 
   const hide = () => {
     setVisible(false);
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (Platform.OS !== "ios") {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    }
   };
 
   useEffect(() => {

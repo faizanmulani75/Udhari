@@ -157,8 +157,20 @@ const ManageStaffScreen = ({ navigation }) => {
     try {
       const res = await regenerateInviteCode(memberId);
       if (res && res.success && res.data) {
-        Alert.alert("Invite Code Regenerated 🎉", `New Code: ${res.data.inviteCode}`);
-        fetchStaffMembers();
+        Alert.alert(
+          "Invite Code Regenerated 🎉", 
+          `New Code: ${res.data.inviteCode}`,
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                setTimeout(() => {
+                  fetchStaffMembers();
+                }, 500);
+              }
+            }
+          ]
+        );
       }
     } catch (err) {
       console.warn("Regenerate code error:", err);
@@ -181,20 +193,31 @@ const ManageStaffScreen = ({ navigation }) => {
             try {
               const res = await deleteStaff(member.id);
               if (res && res.success) {
-                Alert.alert(
-                  "Removed",
-                  `${member.name || "Staff member"} has been removed.`,
-                  [
-                    {
-                      text: "OK",
-                      onPress: () => fetchStaffMembers()
-                    }
-                  ]
-                );
+                // Wrap in setTimeout to prevent iOS alert presentation collision crash
+                setTimeout(() => {
+                  Alert.alert(
+                    "Removed",
+                    `${member.name || "Staff member"} has been removed.`,
+                    [
+                      {
+                        text: "OK",
+                        onPress: () => {
+                          // Delay unmounting layout changes until after native alert dismissal finishes
+                          setTimeout(() => {
+                            fetchStaffMembers();
+                          }, 500);
+                        }
+                      }
+                    ]
+                  );
+                }, 500);
               }
             } catch (err) {
               console.warn("Delete staff failed:", err);
-              Alert.alert("Error", "Could not remove staff. Please try again.");
+              // Wrap in setTimeout to prevent iOS alert presentation collision crash
+              setTimeout(() => {
+                Alert.alert("Error", "Could not remove staff. Please try again.");
+              }, 500);
             }
           },
         },
@@ -219,20 +242,31 @@ const ManageStaffScreen = ({ navigation }) => {
             try {
               const res = await updateStaff(member.id, { role: newRole });
               if (res && res.success) {
-                Alert.alert(
-                  "Success",
-                  `${member.name || "Staff member"}'s role updated to ${newRole.toUpperCase()}.`,
-                  [
-                    {
-                      text: "OK",
-                      onPress: () => fetchStaffMembers()
-                    }
-                  ]
-                );
+                // Wrap in setTimeout to prevent iOS alert presentation collision crash
+                setTimeout(() => {
+                  Alert.alert(
+                    "Success",
+                    `${member.name || "Staff member"}'s role updated to ${newRole.toUpperCase()}.`,
+                    [
+                      {
+                        text: "OK",
+                        onPress: () => {
+                          // Delay unmounting layout changes until after native alert dismissal finishes
+                          setTimeout(() => {
+                            fetchStaffMembers();
+                          }, 500);
+                        }
+                      }
+                    ]
+                  );
+                }, 500);
               }
             } catch (err) {
               console.warn("Failed to update staff role:", err);
-              Alert.alert("Error", "Could not update staff restrictions. Please try again.");
+              // Wrap in setTimeout to prevent iOS alert presentation collision crash
+              setTimeout(() => {
+                Alert.alert("Error", "Could not update staff restrictions. Please try again.");
+              }, 500);
             }
           },
         },

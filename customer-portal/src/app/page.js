@@ -95,26 +95,31 @@ export default function HomePage() {
             <div className="flex flex-col gap-3">
               {/* Android Download */}
               <a
-                href="/app-release.apk"
+                href="/UdhariTracker.apk"
                 download
                 onClick={() => setShowDownloadModal(false)}
-                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5"
+                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer"
               >
                 <span>🤖</span> Android App (APK)
               </a>
 
               {/* iOS Download */}
-              <button
-                onClick={() => setShowIosNotice(true)}
+              <a
+                href="/UdhariTracker.ipa"
+                download
+                onClick={() => {
+                  setShowDownloadModal(false);
+                  setShowIosNotice(true);
+                }}
                 className="bg-[#24242A] hover:bg-[#2C2C34] text-white border border-white/10 font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
-                <span>🍎</span> Apple iOS App
-              </button>
+                <span>🍎</span> iOS Device App (IPA)
+              </a>
             </div>
 
             {showIosNotice && (
-              <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs rounded-xl leading-relaxed text-left">
-                ⚠️ The iOS app is currently in Apple App Store review. Please contact the administrator for TestFlight beta access, or download the Android build.
+              <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs rounded-xl leading-relaxed text-left">
+                ℹ️ **iOS Installation**: Sideload the downloaded `UdhariTracker.ipa` onto your real iOS device using **AltStore**, **Sideloadly**, **TrollStore**, or your developer account!
               </div>
             )}
           </div>
