@@ -279,7 +279,7 @@ const TransactionHistoryScreen = ({ route, navigation }) => {
           <Feather name="arrow-left" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
-          <Text style={styles.headerTitle}>Grahak Khata Bahi</Text>
+          <Text style={styles.headerTitle}>Grahak Khata Vahi</Text>
           <Text style={styles.headerSubtitle}>{customer?.name || "Customer"}</Text>
         </View>
         <View style={styles.placeholder} />
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    color: Colors.white,
+    color: Colors.black,
   },
   headerSubtitle: {
     fontFamily: "Manrope_400Regular",

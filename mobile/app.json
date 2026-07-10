@@ -57,7 +57,8 @@
         }
       ],
       "expo-secure-store",
-      "./withUpiQueries"
+      "./withUpiQueries",
+      "expo-font"
     ],
     "extra": {
       "eas": {

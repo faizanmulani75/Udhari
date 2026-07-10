@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 18,
-    color: Colors.white,
+    color: Colors.black,
   },
   placeholder: {
     width: 40,

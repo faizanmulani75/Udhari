@@ -1016,7 +1016,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 16,
-    color: Colors.white,
+    color: Colors.primary,
     marginBottom: 16,
   },
   infoField: {
@@ -1261,7 +1261,7 @@ const styles = StyleSheet.create({
   langOptionTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: Colors.white,
+    color: Colors.black,
     marginBottom: 2,
   },
   langOptionDesc: {

@@ -18,6 +18,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   Keyboard,
+  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -280,14 +281,18 @@ const ManageStaffScreen = ({ navigation }) => {
         </View>
       ) : (
         <View style={{ flex: 1 }}>
-          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            {staffList.map((member) => (
-              <View key={member.id} style={styles.staffCardWrapper}>
+          <FlatList
+            data={staffList}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item: member }) => (
+              <View style={styles.staffCardWrapper}>
                 <View style={styles.staffCard}>
                   <View style={styles.staffMeta}>
                     <View style={styles.avatarMini}>
                       <Text style={styles.avatarMiniText}>
-                        {member.name.substring(0, 2).toUpperCase()}
+                        {(member.name || "Staff").substring(0, 2).toUpperCase()}
                       </Text>
                     </View>
                     <View style={styles.staffDetails}>
@@ -315,7 +320,7 @@ const ManageStaffScreen = ({ navigation }) => {
                               ? styles.restrictedBadgeText
                               : styles.staffBadgeText
                           ]}>
-                            {member.role === "owner" ? "OWNER" : !member.inviteCodeUsed ? "PENDING" : member.role.toUpperCase()}
+                            {member.role === "owner" ? "OWNER" : !member.inviteCodeUsed ? "PENDING" : (member.role || "STAFF").toUpperCase()}
                           </Text>
                         </View>
                       </View>
@@ -398,8 +403,8 @@ const ManageStaffScreen = ({ navigation }) => {
                   </View>
                 )}
               </View>
-            ))}
-          </ScrollView>
+            )}
+          />
 
           {/* Add Staff Floating / Bottom Button */}
           {user?.role === "owner" && (
