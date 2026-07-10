@@ -16,6 +16,8 @@ import {
   Clipboard,
   Linking,
   Platform,
+  KeyboardAvoidingView,
+  Keyboard,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -44,8 +46,8 @@ const ManageStaffScreen = ({ navigation }) => {
   const maxUsers = subscription ? subscription.maxUsers : 1;
   const activePlanName = subscription ? subscription.plan : "FREE";
 
-  const fetchStaffMembers = async () => {
-    setIsLoading(true);
+  const fetchStaffMembers = async (showLoader = false) => {
+    if (showLoader) setIsLoading(true);
     try {
       const res = await getStaff();
       if (res && res.success && res.data) {
@@ -55,12 +57,12 @@ const ManageStaffScreen = ({ navigation }) => {
       console.warn("Failed to fetch staff members:", err);
       Alert.alert("Error", "Could not load staff list. Please try again.");
     } finally {
-      setIsLoading(false);
+      if (showLoader) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchStaffMembers();
+    fetchStaffMembers(true);
   }, []);
 
   const handleOpenInvite = () => {
@@ -127,6 +129,7 @@ const ManageStaffScreen = ({ navigation }) => {
   const getExpirationText = (expiresAt) => {
     if (!expiresAt) return "";
     const expiry = new Date(expiresAt);
+    if (isNaN(expiry.getTime())) return "";
     const now = new Date();
     const diffMs = expiry - now;
     if (diffMs <= 0) return "Expired";
@@ -167,7 +170,7 @@ const ManageStaffScreen = ({ navigation }) => {
 
     Alert.alert(
       "Remove Staff",
-      `Are you sure you want to remove ${member.name} from your shop? They will lose access to log in immediately.`,
+      `Are you sure you want to remove ${member.name || "this staff member"} from your shop? They will lose access to log in immediately.`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -177,8 +180,16 @@ const ManageStaffScreen = ({ navigation }) => {
             try {
               const res = await deleteStaff(member.id);
               if (res && res.success) {
-                Alert.alert("Removed", `${member.name} has been removed.`);
-                fetchStaffMembers();
+                Alert.alert(
+                  "Removed",
+                  `${member.name || "Staff member"} has been removed.`,
+                  [
+                    {
+                      text: "OK",
+                      onPress: () => fetchStaffMembers()
+                    }
+                  ]
+                );
               }
             } catch (err) {
               console.warn("Delete staff failed:", err);
@@ -198,7 +209,7 @@ const ManageStaffScreen = ({ navigation }) => {
 
     Alert.alert(
       "Confirm Restriction Change",
-      `Are you sure you want to ${actionText} ${member.name}? Restricted staff members cannot reverse ledger entries or delete customers.`,
+      `Are you sure you want to ${actionText} ${member.name || "this staff member"}? Restricted staff members cannot reverse ledger entries or delete customers.`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -207,8 +218,16 @@ const ManageStaffScreen = ({ navigation }) => {
             try {
               const res = await updateStaff(member.id, { role: newRole });
               if (res && res.success) {
-                Alert.alert("Success", `${member.name}'s role updated to ${newRole.toUpperCase()}.`);
-                fetchStaffMembers();
+                Alert.alert(
+                  "Success",
+                  `${member.name || "Staff member"}'s role updated to ${newRole.toUpperCase()}.`,
+                  [
+                    {
+                      text: "OK",
+                      onPress: () => fetchStaffMembers()
+                    }
+                  ]
+                );
               }
             } catch (err) {
               console.warn("Failed to update staff role:", err);
@@ -397,46 +416,64 @@ const ManageStaffScreen = ({ navigation }) => {
       )}
 
       {/* Invite Staff Modal */}
-      <Modal visible={modalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Staff Member</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeModalBtn}>
-                <Feather name="x" size={20} color={Colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setModalVisible(false)}
+          >
+            <TouchableOpacity
+              activeOpacity={1}
+              style={styles.modalCard}
+              onPress={() => {}} // Absorb clicks inside the card
+            >
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Add Staff Member</Text>
+                <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeModalBtn}>
+                  <Feather name="x" size={20} color={Colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
 
-            <Text style={styles.inputLabel}>Staff Full Name</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="E.g., Ramesh Kumar"
-              placeholderTextColor={Colors.textPlaceholder}
-              value={name}
-              onChangeText={setName}
-            />
+              <Text style={styles.inputLabel}>Staff Full Name</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="E.g., Ramesh Kumar"
+                placeholderTextColor={Colors.textPlaceholder}
+                value={name}
+                onChangeText={setName}
+              />
 
-            <Text style={styles.inputLabel}>Phone Number (with Country Code)</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="+919876543210"
-              placeholderTextColor={Colors.textPlaceholder}
-              keyboardType="phone-pad"
-              autoCapitalize="none"
-              autoCorrect={false}
-              value={phone}
-              onChangeText={setPhone}
-            />
+              <Text style={styles.inputLabel}>Phone Number (with Country Code)</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="+919876543210"
+                placeholderTextColor={Colors.textPlaceholder}
+                keyboardType="phone-pad"
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={phone}
+                onChangeText={setPhone}
+              />
 
-            <Button
-              title="Submit & Invite"
-              onPress={handleInviteSubmit}
-              isLoading={isSubmitting}
-              variant="success"
-              style={styles.modalConfirmBtn}
-            />
-          </View>
-        </View>
+              <Button
+                title="Submit & Invite"
+                onPress={handleInviteSubmit}
+                isLoading={isSubmitting}
+                variant="success"
+                style={styles.modalConfirmBtn}
+              />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Invite Code Success Modal */}
