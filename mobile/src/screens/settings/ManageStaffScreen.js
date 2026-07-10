@@ -37,6 +37,7 @@ const ManageStaffScreen = ({ navigation }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [newStaffDetails, setNewStaffDetails] = useState(null);
+  const [modalError, setModalError] = useState("");
 
   // Invite Form Fields
   const [name, setName] = useState("");
@@ -67,6 +68,7 @@ const ManageStaffScreen = ({ navigation }) => {
   }, []);
 
   const handleOpenInvite = () => {
+    setModalError("");
     if (staffList.length >= maxUsers) {
       Alert.alert(
         "Staff Limit Reached",
@@ -85,17 +87,15 @@ const ManageStaffScreen = ({ navigation }) => {
   };
 
   const handleInviteSubmit = async () => {
+    setModalError("");
     if (!name.trim() || !phone.trim()) {
-      Alert.alert("Required Fields", "Please enter both name and phone number.");
+      setModalError("Please enter both name and phone number.");
       return;
     }
 
     const cleanPhone = phone.trim();
     if (!/^\+[1-9]\d{1,14}$/.test(cleanPhone)) {
-      Alert.alert(
-        "Invalid Phone",
-        "Phone number must include country code (e.g. +919876543210)."
-      );
+      setModalError("Phone number must include country code (e.g. +919876543210).");
       return;
     }
 
@@ -111,15 +111,15 @@ const ManageStaffScreen = ({ navigation }) => {
         setModalVisible(false);
         setName("");
         setPhone("+91");
+        setModalError("");
         setNewStaffDetails(res.data);
         fetchStaffMembers();
       } else {
-        Alert.alert("Invitation Failed", res.message || "Failed to add staff.");
+        setModalError(res.message || "Failed to add staff.");
       }
     } catch (err) {
       console.warn("Invite staff failed:", err);
-      Alert.alert(
-        "Error",
+      setModalError(
         err.response?.data?.message || err.message || "Could not complete invitation. Please check inputs."
       );
     } finally {
@@ -434,7 +434,10 @@ const ManageStaffScreen = ({ navigation }) => {
           <TouchableOpacity
             style={styles.modalOverlay}
             activeOpacity={1}
-            onPress={() => setModalVisible(false)}
+            onPress={() => {
+              setModalVisible(false);
+              setModalError("");
+            }}
           >
             <TouchableOpacity
               activeOpacity={1}
@@ -443,10 +446,23 @@ const ManageStaffScreen = ({ navigation }) => {
             >
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Add Staff Member</Text>
-                <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeModalBtn}>
+                <TouchableOpacity 
+                  onPress={() => {
+                    setModalVisible(false);
+                    setModalError("");
+                  }} 
+                  style={styles.closeModalBtn}
+                >
                   <Feather name="x" size={20} color={Colors.textSecondary} />
                 </TouchableOpacity>
               </View>
+
+              {modalError ? (
+                <View style={styles.errorBadgeContainer}>
+                  <Feather name="alert-circle" size={14} color={Colors.error} />
+                  <Text style={styles.errorBadgeText}>{modalError}</Text>
+                </View>
+              ) : null}
 
               <Text style={styles.inputLabel}>Staff Full Name</Text>
               <TextInput
@@ -935,6 +951,22 @@ const styles = StyleSheet.create({
   },
   doneBtn: {
     marginTop: 10,
+  },
+  errorBadgeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(216, 90, 48, 0.08)",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+    gap: 6,
+  },
+  errorBadgeText: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: 12,
+    color: Colors.error,
+    flex: 1,
   },
 });
 

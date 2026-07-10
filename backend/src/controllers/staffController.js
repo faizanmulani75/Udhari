@@ -86,43 +86,62 @@ const inviteStaff = catchAsync(async (req, res) => {
     );
   }
 
-  // Check if phone already registered in this shop
+  // Check if phone already exists in User table (active or soft-deleted)
   const existingUser = await prisma.user.findFirst({
-    where: {
-      shopId: req.shopId,
-      phone,
-      deletedAt: null,
-    },
-  });
-
-  if (existingUser) {
-    throw ApiError.conflict("A user with this phone number is already registered under this shop");
-  }
-
-  // Generate temporary authId
-  const tempAuthId = getMockAuthId(phone);
-
-  // Check if authId is unique in User table
-  const existingAuth = await prisma.user.findFirst({
-    where: { authId: tempAuthId, deletedAt: null },
+    where: { phone },
   });
 
   const inviteCode = generateInviteCode();
   const inviteCodeExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+  let newUser;
 
-  // Create user
-  const newUser = await prisma.user.create({
-    data: {
-      shopId: req.shopId,
-      authId: existingAuth ? crypto.randomUUID() : tempAuthId, // fallback to random UUID if phone matches another shop keeper's mock authId
-      name: name.trim(),
-      phone: phone.trim(),
-      role: role.trim(),
-      inviteCode,
-      inviteCodeExpiresAt,
-      inviteCodeUsed: false,
-    },
-  });
+  if (existingUser) {
+    // If they are active
+    if (existingUser.deletedAt === null) {
+      if (existingUser.shopId === req.shopId) {
+        throw ApiError.conflict("A user with this phone number is already registered under this shop");
+      } else {
+        throw ApiError.conflict("A user with this phone number is already registered under another shop");
+      }
+    }
+
+    // If soft-deleted, reactivate them and assign to current shop
+    newUser = await prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        shopId: req.shopId,
+        name: name.trim(),
+        role: role.trim(),
+        inviteCode,
+        inviteCodeExpiresAt,
+        inviteCodeUsed: false,
+        isActive: true,
+        deletedAt: null, // Reactivate!
+      },
+    });
+  } else {
+    // Generate temporary authId
+    const tempAuthId = getMockAuthId(phone);
+
+    // Check if authId is unique in User table
+    const existingAuth = await prisma.user.findFirst({
+      where: { authId: tempAuthId, deletedAt: null },
+    });
+
+    // Create new user
+    newUser = await prisma.user.create({
+      data: {
+        shopId: req.shopId,
+        authId: existingAuth ? crypto.randomUUID() : tempAuthId, // fallback to random UUID if phone matches another shop keeper's mock authId
+        name: name.trim(),
+        phone: phone.trim(),
+        role: role.trim(),
+        inviteCode,
+        inviteCodeExpiresAt,
+        inviteCodeUsed: false,
+      },
+    });
+  }
 
   await logActivity(
     req.shopId,
