@@ -24,6 +24,7 @@ import {
 } from "../../services/subscriptionService";
 import useShopStore from "../../store/shopStore";
 import useAuthStore from "../../store/authStore";
+import useSubscriptionStore from "../../store/subscriptionStore";
 import RazorpayCheckout from "react-native-razorpay";
 
 const SubscriptionScreen = ({ navigation }) => {
@@ -36,11 +37,15 @@ const SubscriptionScreen = ({ navigation }) => {
   const fetchSubscriptionInfo = async () => {
     setIsLoading(true);
     try {
-      const res = await getSubscription();
-      if (res && res.success && res.data) {
-        setCurrentPlan(res.data.plan || "FREE");
-        setSubscriptionDetails(res.data);
-      }
+      await useSubscriptionStore.getState().fetchSubscription();
+      const subState = useSubscriptionStore.getState();
+      setCurrentPlan(subState.plan);
+      setSubscriptionDetails({
+        plan: subState.plan,
+        maxCustomers: subState.maxCustomers,
+        maxUsers: subState.maxUsers,
+        expiresAt: subState.expiresAt,
+      });
     } catch (err) {
       console.warn("Failed to load subscription info:", err);
     } finally {
@@ -221,7 +226,8 @@ const SubscriptionScreen = ({ navigation }) => {
         "Up to 10 customers limit",
         "Single shopkeeper owner account",
         "Inline math formula calculator",
-        "SMS/WhatsApp payment notifications",
+        "Manual SMS/WhatsApp reminders",
+        "15 daily Voice Entries",
       ],
       limitText: "Max 10 customers",
     },
@@ -236,8 +242,11 @@ const SubscriptionScreen = ({ navigation }) => {
         "Unlimited customers entry",
         "Up to 5 staff user accounts",
         "Full AI Transaction parsing engine",
-        "Automatic outstanding balance alerts",
-        "Dedicated VIP customer support",
+        "Unlimited Voice Entries",
+        "Hisaab Analytics & Ledger Charts",
+        "Immutable Activity Audit Log",
+        "PDF & Excel Statement Exports",
+        "Customer Statement Link & QR Code",
       ],
       limitText: "Unlimited customers",
     },

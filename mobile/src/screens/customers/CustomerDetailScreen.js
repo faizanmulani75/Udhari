@@ -22,6 +22,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import useCustomerStore from "../../store/customerStore";
 import useAuthStore from "../../store/authStore";
+import useSubscriptionStore from "../../store/subscriptionStore";
 import Colors from "../../constants/colors";
 import { formatCurrency, formatDate, formatRelativeDate } from "../../utils/format";
 import { Feather } from "@expo/vector-icons";
@@ -157,6 +158,22 @@ const CustomerDetailScreen = ({ route, navigation }) => {
   };
 
   const handleExportPDF = async () => {
+    const { isPro } = useSubscriptionStore.getState();
+    if (!isPro()) {
+      Alert.alert(
+        "Pro Feature Required",
+        "Exporting transaction statements as PDF requires Udhari Pro. Please upgrade your plan in Settings.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Upgrade Plan",
+            onPress: () => navigation.navigate("Settings", { screen: "Subscription" }),
+          },
+        ]
+      );
+      return;
+    }
+
     try {
       const token = await AsyncStorage.getItem("accessToken");
       const url = `${Config.API_URL}/customers/${customerId}/transactions/export-pdf?token=${token}`;
@@ -168,6 +185,22 @@ const CustomerDetailScreen = ({ route, navigation }) => {
   };
 
   const handleExportCSV = async () => {
+    const { isPro } = useSubscriptionStore.getState();
+    if (!isPro()) {
+      Alert.alert(
+        "Pro Feature Required",
+        "Exporting transaction statements as CSV requires Udhari Pro. Please upgrade your plan in Settings.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Upgrade Plan",
+            onPress: () => navigation.navigate("Settings", { screen: "Subscription" }),
+          },
+        ]
+      );
+      return;
+    }
+
     try {
       const token = await AsyncStorage.getItem("accessToken");
       const url = `${Config.API_URL}/customers/${customerId}/transactions/export-csv?token=${token}`;
@@ -220,6 +253,25 @@ const CustomerDetailScreen = ({ route, navigation }) => {
     } catch (err) {
       console.warn("Error sharing portal link:", err.message);
     }
+  };
+
+  const handleShowQR = () => {
+    const { isPro } = useSubscriptionStore.getState();
+    if (!isPro()) {
+      Alert.alert(
+        "Pro Feature Required",
+        "The Customer Statement Link & QR Code is a Pro-only feature. Please upgrade your plan in Settings.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Upgrade Plan",
+            onPress: () => navigation.navigate("Settings", { screen: "Subscription" }),
+          },
+        ]
+      );
+      return;
+    }
+    setShowQrModal(true);
   };
 
   if (isLoading || !selectedCustomer) {
@@ -316,7 +368,7 @@ const CustomerDetailScreen = ({ route, navigation }) => {
                 <Text style={styles.contactBtnText}>UPI Pay</Text>
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity onPress={() => setShowQrModal(true)} style={styles.contactBtn}>
+              <TouchableOpacity onPress={handleShowQR} style={styles.contactBtn}>
                 <Feather name="maximize" size={16} color={Colors.textSecondary} style={styles.contactIcon} />
                 <Text style={styles.contactBtnText}>Show QR</Text>
               </TouchableOpacity>

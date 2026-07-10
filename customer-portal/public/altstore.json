@@ -1,0 +1,21 @@
+{
+  "name": "Udhari Tracker App Store",
+  "identifier": "com.udharitracker.source",
+  "apps": [
+    {
+      "name": "Udhari Tracker",
+      "bundleIdentifier": "com.udharitracker",
+      "developerName": "Udhari SaaS",
+      "version": "1.0.0",
+      "versionDate": "2026-07-10",
+      "versionDescription": "Initial release of Udhari Tracker. Manage customer ledger accounts, credit, payments, and staff members.",
+      "downloadURL": "https://udhari-tracking.vercel.app/UdhariTracker.ipa",
+      "localizedDescription": "Premium Ledger & Khata Book app for small businesses. Track outstanding debt, add customers, log transactions offline, and manage staff members.",
+      "iconURL": "https://udhari-tracking.vercel.app/logo.png",
+      "tintColor": "#1D9E75",
+      "size": 15728640,
+      "subtitle": "Premium Business Ledger Book"
+    }
+  ]
+}
+

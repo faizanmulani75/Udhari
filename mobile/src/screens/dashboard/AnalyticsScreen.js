@@ -22,6 +22,8 @@ import Colors from "../../constants/colors";
 import { formatCurrency } from "../../utils/format";
 import { getAnalyticsData } from "../../services/dashboardService";
 import useAuthStore from "../../store/authStore";
+import useSubscriptionStore from "../../store/subscriptionStore";
+import ProGate from "../../components/common/ProGate";
 
 const { width } = Dimensions.get("window");
 const CHART_HEIGHT = 130;
@@ -29,6 +31,7 @@ const CHART_HEIGHT = 130;
 const AnalyticsScreen = ({ navigation }) => {
   const { shop } = useAuthStore();
   const currencyCode = shop?.currency || "INR";
+  const { isPro } = useSubscriptionStore();
 
   const [days, setDays] = useState(7);
   const [isLoading, setIsLoading] = useState(true);
@@ -126,9 +129,11 @@ const AnalyticsScreen = ({ navigation }) => {
                   <View style={[styles.bar, { height: creditH, backgroundColor: Colors.error }]} />
                   <View style={[styles.bar, { height: paymentH, backgroundColor: Colors.primary }]} />
                 </View>
-                <Text style={styles.barLabel}>
-                  {label}
-                </Text>
+                {idx % (isMonthly ? 1 : 2) === 0 ? (
+                  <Text style={styles.barLabel}>{label}</Text>
+                ) : (
+                  <View style={styles.barLabelPlaceholder} />
+                )}
               </View>
             );
           })}
@@ -181,11 +186,17 @@ const AnalyticsScreen = ({ navigation }) => {
 
       {/* ── Header ── */}
       <View style={styles.headerBar}>
-        {/* <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Feather name="chevron-left" size={24} color={Colors.textPrimary} />
-        </TouchableOpacity> */}
         <Text style={styles.headerTitle}>Hisaab Analytics</Text>
-        {/* <View style={styles.placeholder} /> */}
+        {!isPro() && (
+          <TouchableOpacity
+            style={styles.proHeaderBadge}
+            onPress={() => navigation.navigate("Subscription")}
+            activeOpacity={0.8}
+          >
+            <Feather name="star" size={11} color={Colors.accentText} />
+            <Text style={styles.proHeaderBadgeText}>PRO</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* ── Period Selector ── */}
@@ -207,16 +218,22 @@ const AnalyticsScreen = ({ navigation }) => {
         ))}
       </View>
 
-      {isLoading ? (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loaderText}>Aggregating ledger data...</Text>
-        </View>
-      ) : (
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+      <ProGate
+        feature="analytics"
+        mode="blur"
+        navigation={navigation}
+        label="Unlock ledger insights, charts, and customer collection trends."
+      >
+        {isLoading ? (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+            <Text style={styles.loaderText}>Aggregating ledger data...</Text>
+          </View>
+        ) : (
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
           {/* ══════════════════════════════════════════
               SECTION 1 — Ledger Trends Chart (First Priority)
           ══════════════════════════════════════════ */}
@@ -336,6 +353,7 @@ const AnalyticsScreen = ({ navigation }) => {
           <View style={{ height: 20 }} />
         </ScrollView>
       )}
+      </ProGate>
     </SafeAreaView>
   );
 };
@@ -355,6 +373,26 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 0.5,
     borderColor: Colors.border,
+    position: "relative",
+  },
+  proHeaderBadge: {
+    position: "absolute",
+    right: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: Colors.accentLight,
+    borderWidth: 1,
+    borderColor: Colors.accent,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  proHeaderBadgeText: {
+    fontFamily: "Manrope_700Bold",
+    fontSize: 9,
+    color: Colors.accentText,
+    letterSpacing: 0.5,
   },
   backButton: {
     width: 40,

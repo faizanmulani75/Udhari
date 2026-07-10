@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import useCustomerStore from "../../store/customerStore";
 import useShopStore from "../../store/shopStore";
+import useSubscriptionStore from "../../store/subscriptionStore";
 import Colors from "../../constants/colors";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
@@ -111,15 +112,13 @@ const AddCustomerScreen = ({ route, navigation }) => {
     if (!validate()) return;
 
     if (!isEditMode) {
-      const subscription = shop?.subscriptions?.[0];
-      const maxCustomers = subscription ? subscription.maxCustomers : 10;
+      const { maxCustomers, plan } = useSubscriptionStore.getState();
       const currentCount = meta?.totalCount || customers.length;
-      const planName = subscription ? subscription.plan : "FREE";
 
       if (currentCount >= maxCustomers) {
         Alert.alert(
           "Customer Limit Reached",
-          `Your current ${planName} Plan only supports up to ${maxCustomers} active customers. Please upgrade your plan to register more grahaks.`,
+          `Your current ${plan} Plan only supports up to ${maxCustomers} active customers. Please upgrade your plan to register more grahaks.`,
           [
             { text: "Cancel", style: "cancel" },
             {

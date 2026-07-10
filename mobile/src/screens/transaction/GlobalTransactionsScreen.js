@@ -21,6 +21,7 @@ import Colors from "../../constants/colors";
 import { formatCurrency, formatDate } from "../../utils/format";
 import EmptyState from "../../components/common/EmptyState";
 import { Feather } from "@expo/vector-icons";
+import ProGate from "../../components/common/ProGate";
 
 // Memoized global card item for clean render performance
 const GlobalTxnCard = React.memo(({ item, currencyCode, navigation }) => {
@@ -134,36 +135,43 @@ const GlobalTransactionsScreen = ({ route, navigation }) => {
       </View>
 
       {/* Transactions List */}
-      <FlatList
-        data={transactions}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.3}
-        ListFooterComponent={renderFooter}
-        initialNumToRender={10}
-        maxToRenderPerBatch={10}
-        windowSize={5}
-        removeClippedSubviews={Platform.OS === 'android'}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={onRefresh}
-            tintColor={Colors.primary}
-            colors={[Colors.primary]}
-          />
-        }
-        ListEmptyComponent={
-          !isLoading ? (
-            <EmptyState
-              emoji={isCredit ? "📈" : "📉"}
-              title="No Entries Recorded"
-              subtitle={`Your shop currently has no registered ${isCredit ? "Udhari (Diya)" : "Payment (Mila)"} records.`}
+      <ProGate
+        feature="global_transactions"
+        mode="hide"
+        navigation={navigation}
+        label="View all shop transactions and ledger entries in a single list."
+      >
+        <FlatList
+          data={transactions}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={renderFooter}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS === 'android'}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={onRefresh}
+              tintColor={Colors.primary}
+              colors={[Colors.primary]}
             />
-          ) : null
-        }
-      />
+          }
+          ListEmptyComponent={
+            !isLoading ? (
+              <EmptyState
+                emoji={isCredit ? "📈" : "📉"}
+                title="No Entries Recorded"
+                subtitle={`Your shop currently has no registered ${isCredit ? "Udhari (Diya)" : "Payment (Mila)"} records.`}
+              />
+            ) : null
+          }
+        />
+      </ProGate>
     </SafeAreaView>
   );
 };

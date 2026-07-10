@@ -9,8 +9,7 @@ const router = Router();
 // Send reminder to a specific customer
 router.post("/send/:customerId", reminderController.sendReminder);
 
-// Bulk send reminders to all debtors
-router.post("/bulk-send", reminderController.sendBulkReminders);
+
 
 // Get reminder history
 router.get("/history", reminderController.getReminderHistory);

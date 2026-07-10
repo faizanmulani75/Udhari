@@ -22,10 +22,10 @@ import { Feather } from "@expo/vector-icons";
 import useDashboardStore from "../../store/dashboardStore";
 import useAuthStore from "../../store/authStore";
 import useShopStore from "../../store/shopStore";
+import useSubscriptionStore, { VOICE_DAILY_FREE_LIMIT } from "../../store/subscriptionStore";
 import Colors from "../../constants/colors";
 import { formatCurrency, formatDate } from "../../utils/format";
 import { getOfflineTransactions, syncQueuedTransactions, checkOnlineStatus } from "../../utils/syncManager";
-import { sendBulkReminders } from "../../services/reminderService";
 import { voiceEntry } from "../../services/transactionService";
 import useTransactionStore from "../../store/transactionStore";
 import useCustomerStore from "../../store/customerStore";
@@ -177,6 +177,19 @@ const DashboardScreen = ({ navigation }) => {
   const { user } = useAuthStore();
   const { shop, fetchShop } = useShopStore();
   const currencyCode = shop?.currency || "INR";
+  const shopId = shop?.id || "";
+
+  // Subscription gating
+  const { isPro, canUseVoice, getVoiceRemaining, incrementVoiceUsage } = useSubscriptionStore();
+  const [voiceRemainingToday, setVoiceRemainingToday] = useState(VOICE_DAILY_FREE_LIMIT);
+
+  // Refresh remaining voice uses when screen comes into focus
+  const refreshVoiceRemaining = useCallback(async () => {
+    if (shopId && !isPro()) {
+      const rem = await getVoiceRemaining(shopId);
+      setVoiceRemainingToday(rem);
+    }
+  }, [shopId, isPro]);
 
   const {
     summary,
@@ -244,6 +257,22 @@ const DashboardScreen = ({ navigation }) => {
   });
 
   const startVoiceEntry = async () => {
+    // Check daily voice entry limit for FREE plan
+    if (!isPro()) {
+      const allowed = await canUseVoice(shopId);
+      if (!allowed) {
+        Alert.alert(
+          "Daily Limit Reached 🎙️",
+          `You have used all ${VOICE_DAILY_FREE_LIMIT} free voice entries for today. Upgrade to Udhari Pro for unlimited voice entries!`,
+          [
+            { text: "Not Now", style: "cancel" },
+            { text: "Upgrade to Pro", onPress: () => navigation.navigate("Subscription") },
+          ]
+        );
+        return;
+      }
+    }
+
     setVoiceTranscript("");
     setVoiceParsedData(null);
     setCandidates([]);
@@ -326,6 +355,16 @@ const DashboardScreen = ({ navigation }) => {
     }
 
     setIsVoiceProcessing(true);
+
+    // Increment daily voice usage counter for FREE plan tracking
+    if (shopId) {
+      incrementVoiceUsage(shopId).catch(() => {});
+      // Refresh the displayed count
+      if (!isPro()) {
+        getVoiceRemaining(shopId).then(rem => setVoiceRemainingToday(rem)).catch(() => {});
+      }
+    }
+
     try {
       const isOnline = await checkOnlineStatus();
       if (!isOnline) {
@@ -734,7 +773,7 @@ const DashboardScreen = ({ navigation }) => {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Quick Actions</Text>
               <View style={styles.quickActionsContainer}>
-                {/* Voice Entry */}
+                {/* Voice Entry (15/day FREE, unlimited PRO) */}
                 <TouchableOpacity
                   style={[styles.quickActionBtn, { backgroundColor: Colors.primary }]}
                   onPress={startVoiceEntry}
@@ -742,6 +781,11 @@ const DashboardScreen = ({ navigation }) => {
                 >
                   <Feather name="mic" size={18} color={Colors.white} />
                   <Text style={styles.quickActionBtnText}>Voice Entry</Text>
+                  {!isPro() && (
+                    <Text style={{ fontFamily: "Manrope_400Regular", fontSize: 9, color: "rgba(255,255,255,0.7)", marginTop: 1 }}>
+                      {voiceRemainingToday}/{VOICE_DAILY_FREE_LIMIT} left
+                    </Text>
+                  )}
                 </TouchableOpacity>
 
                 {/* Naya Grahak */}

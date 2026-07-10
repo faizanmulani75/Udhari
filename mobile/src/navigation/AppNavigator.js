@@ -7,6 +7,7 @@ import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import * as SplashScreen from "expo-splash-screen";
 import useAuthStore from "../store/authStore";
+import useSubscriptionStore from "../store/subscriptionStore";
 import AuthNavigator from "./AuthNavigator";
 import ShopSetupScreen from "../screens/onboarding/ShopSetupScreen";
 import MainNavigator from "./MainNavigator";
@@ -73,6 +74,7 @@ const splashStyles = StyleSheet.create({
 
 const AppNavigator = () => {
   const { isAuthenticated, shopId, isHydrated, hydrate } = useAuthStore();
+  const { fetchSubscription } = useSubscriptionStore();
 
   useEffect(() => {
     hydrate();
@@ -83,6 +85,12 @@ const AppNavigator = () => {
       SplashScreen.hideAsync().catch(() => {});
     }
   }, [isHydrated]);
+
+  useEffect(() => {
+    if (isAuthenticated && shopId) {
+      fetchSubscription();
+    }
+  }, [isAuthenticated, shopId]);
 
   // Show splash while checking AsyncStorage
   if (!isHydrated) {

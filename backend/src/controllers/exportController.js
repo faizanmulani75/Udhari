@@ -9,6 +9,12 @@ const catchAsync = require("../utils/catchAsync");
  * Export all customers as a downloadable CSV file.
  */
 const exportCustomersCSV = catchAsync(async (req, res) => {
+  const { getActiveSubscription } = require("../services/subscriptionService");
+  const subscription = await getActiveSubscription(req.shopId);
+  if (!subscription || subscription.plan !== "PRO") {
+    return res.status(403).json({ success: false, message: "Exporting statements is a Pro-only feature. Please upgrade your plan." });
+  }
+
   const csv = await exportService.exportCustomersCSV(req.shopId);
 
   res.setHeader("Content-Type", "text/csv");
@@ -22,6 +28,12 @@ const exportCustomersCSV = catchAsync(async (req, res) => {
  * Query params: customerId?, from?, to?
  */
 const exportTransactionsCSV = catchAsync(async (req, res) => {
+  const { getActiveSubscription } = require("../services/subscriptionService");
+  const subscription = await getActiveSubscription(req.shopId);
+  if (!subscription || subscription.plan !== "PRO") {
+    return res.status(403).json({ success: false, message: "Exporting statements is a Pro-only feature. Please upgrade your plan." });
+  }
+
   const { customerId, from, to } = req.query;
   const csv = await exportService.exportTransactionsCSV(req.shopId, { customerId, from, to });
 
@@ -36,6 +48,12 @@ const exportTransactionsCSV = catchAsync(async (req, res) => {
  * Query params: customerId (required), from?, to?
  */
 const exportTransactionsPDF = catchAsync(async (req, res) => {
+  const { getActiveSubscription } = require("../services/subscriptionService");
+  const subscription = await getActiveSubscription(req.shopId);
+  if (!subscription || subscription.plan !== "PRO") {
+    return res.status(403).json({ success: false, message: "Exporting statements is a Pro-only feature. Please upgrade your plan." });
+  }
+
   const { customerId, from, to } = req.query;
 
   if (!customerId) {

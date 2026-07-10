@@ -19,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import Colors from "../../constants/colors";
 import { getAuditLogs } from "../../services/auditService";
+import ProGate from "../../components/common/ProGate";
 
 const getActionLabel = (action, details) => {
   switch (action) {
@@ -181,56 +182,63 @@ const AuditLogScreen = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Search Filter */}
-      <View style={styles.searchContainer}>
-        <Feather name="search" size={18} color={Colors.textMuted} style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search logs by activity or staff name..."
-          placeholderTextColor={Colors.textPlaceholder}
-          value={searchQuery}
-          onChangeText={handleSearch}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => handleSearch("")}>
-            <Feather name="x" size={18} color={Colors.textSecondary} />
-          </TouchableOpacity>
-        )}
-      </View>
+      <ProGate
+        feature="audit_log"
+        mode="hide"
+        navigation={navigation}
+        label="Keep track of actions taken by you and your staff members."
+      >
+        {/* Search Filter */}
+        <View style={styles.searchContainer}>
+          <Feather name="search" size={18} color={Colors.textMuted} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search logs by activity or staff name..."
+            placeholderTextColor={Colors.textPlaceholder}
+            value={searchQuery}
+            onChangeText={handleSearch}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => handleSearch("")}>
+              <Feather name="x" size={18} color={Colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
 
-      {/* Content */}
-      {isLoading ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-        </View>
-      ) : filteredLogs.length === 0 ? (
-        <View style={styles.centerContainer}>
-          <Feather name="database" size={48} color={Colors.textMuted} />
-          <Text style={styles.emptyTitle}>No Activities Found</Text>
-          <Text style={styles.emptyText}>
-            {searchQuery ? "No matches found for your search query." : "Staff or ledger events will show up here."}
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredLogs}
-          renderItem={renderLogItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          initialNumToRender={12}
-          maxToRenderPerBatch={12}
-          windowSize={5}
-          removeClippedSubviews={Platform.OS === 'android'}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={handleRefresh}
-              tintColor={Colors.primary}
-              colors={[Colors.primary]}
-            />
-          }
-        />
-      )}
+        {/* Content */}
+        {isLoading ? (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+          </View>
+        ) : filteredLogs.length === 0 ? (
+          <View style={styles.centerContainer}>
+            <Feather name="database" size={48} color={Colors.textMuted} />
+            <Text style={styles.emptyTitle}>No Activities Found</Text>
+            <Text style={styles.emptyText}>
+              {searchQuery ? "No matches found for your search query." : "Staff or ledger events will show up here."}
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredLogs}
+            renderItem={renderLogItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            initialNumToRender={12}
+            maxToRenderPerBatch={12}
+            windowSize={5}
+            removeClippedSubviews={Platform.OS === 'android'}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor={Colors.primary}
+                colors={[Colors.primary]}
+              />
+            }
+          />
+        )}
+      </ProGate>
     </SafeAreaView>
   );
 };

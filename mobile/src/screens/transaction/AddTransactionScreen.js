@@ -23,6 +23,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import useTransactionStore from "../../store/transactionStore";
 import useCustomerStore from "../../store/customerStore";
 import useShopStore from "../../store/shopStore";
+import useSubscriptionStore, { VOICE_DAILY_FREE_LIMIT } from "../../store/subscriptionStore";
 import Colors from "../../constants/colors";
 import { formatCurrency } from "../../utils/format";
 import Input from "../../components/common/Input";
@@ -142,8 +143,8 @@ const AddTransactionScreen = ({ route, navigation }) => {
   }, [errors, amount, isListening, isAiLoading, storeError]);
 
   const handleAiParse = async () => {
-    const plan = shop?.subscriptions?.[0]?.plan || "FREE";
-    if (plan !== "PRO") {
+    const { isPro } = useSubscriptionStore.getState();
+    if (!isPro()) {
       Alert.alert(
         "Pro Feature Required",
         "AI Transaction Parsing is a Pro-only feature. Please upgrade your plan to unlock AI features.",
@@ -202,6 +203,12 @@ const AddTransactionScreen = ({ route, navigation }) => {
   useSpeechRecognitionEvent("result", (event) => {
     if (event.results && event.results[0]) {
       setDescription(event.results[0].transcript);
+
+      // Increment daily voice usage count for FREE users
+      const { isPro, incrementVoiceUsage } = useSubscriptionStore.getState();
+      if (!isPro() && shop?.id) {
+        incrementVoiceUsage(shop.id).catch(() => {});
+      }
     }
   });
   useSpeechRecognitionEvent("error", (event) => {
@@ -212,20 +219,23 @@ const AddTransactionScreen = ({ route, navigation }) => {
   });
 
   const toggleListening = async () => {
-    const plan = shop?.subscriptions?.[0]?.plan || "FREE";
-    if (plan === "FREE") {
-      Alert.alert(
-        "Premium Feature Required",
-        "Voice entries are only supported in our BASIC and PRO plans. Please upgrade your plan to unlock voice entry.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Upgrade Plan",
-            onPress: () => navigation.navigate("Settings", { screen: "Subscription" }),
-          },
-        ]
-      );
-      return;
+    const { isPro, canUseVoice } = useSubscriptionStore.getState();
+    if (!isPro() && shop?.id) {
+      const allowed = await canUseVoice(shop.id);
+      if (!allowed) {
+        Alert.alert(
+          "Daily Limit Reached 🎙️",
+          `You have used all ${VOICE_DAILY_FREE_LIMIT} free voice entries for today. Upgrade to Udhari Pro for unlimited voice entries!`,
+          [
+            { text: "Not Now", style: "cancel" },
+            {
+              text: "Upgrade Plan",
+              onPress: () => navigation.navigate("Settings", { screen: "Subscription" }),
+            },
+          ]
+        );
+        return;
+      }
     }
 
     if (!ExpoSpeechRecognitionModule) {
