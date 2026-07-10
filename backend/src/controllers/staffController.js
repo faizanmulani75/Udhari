@@ -123,9 +123,9 @@ const inviteStaff = catchAsync(async (req, res) => {
     // Generate temporary authId
     const tempAuthId = getMockAuthId(phone);
 
-    // Check if authId is unique in User table
+    // Check if authId is unique in User table (active or soft-deleted)
     const existingAuth = await prisma.user.findFirst({
-      where: { authId: tempAuthId, deletedAt: null },
+      where: { authId: tempAuthId },
     });
 
     // Create new user
