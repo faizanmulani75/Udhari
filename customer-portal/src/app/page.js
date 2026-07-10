@@ -3,19 +3,12 @@
 // src/app/page.js
 // Home landing page for the public Udhari Customer Portal & SaaS Product.
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 
 export default function HomePage() {
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [showIosNotice, setShowIosNotice] = useState(false);
-  const [origin, setOrigin] = useState("");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setOrigin(window.location.origin);
-    }
-  }, []);
 
   const features = [
     {
@@ -125,15 +118,8 @@ export default function HomePage() {
             </div>
 
             {showIosNotice && (
-              <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs rounded-xl leading-relaxed text-left flex flex-col gap-2">
-                <p>ℹ️ **Direct Sideload**: Download `UdhariTracker.ipa` and sideload it using **AltStore**, **Sideloadly**, or **TrollStore**.</p>
-                <div className="border-t border-emerald-500/10 pt-2 mt-1">
-                  <p className="font-semibold text-emerald-300">📦 AltStore Source Repo (Auto-Updates):</p>
-                  <p className="mt-1 text-[11px] text-slate-300 font-mono bg-black/40 p-2 rounded border border-white/5 select-all">
-                    {origin || "https://yourdomain.com"}/altstore.json
-                  </p>
-                  <p className="mt-1 text-[10px] text-slate-400">Copy this URL and add it to "Sources" inside AltStore to install and receive automatic updates.</p>
-                </div>
+              <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs rounded-xl leading-relaxed text-left">
+                ℹ️ **iOS Installation**: Sideload the downloaded `UdhariTracker.ipa` onto your real iOS device using **AltStore**, **Sideloadly**, **TrollStore**, or your developer account!
               </div>
             )}
           </div>
