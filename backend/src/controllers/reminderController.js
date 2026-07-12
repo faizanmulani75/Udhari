@@ -15,6 +15,15 @@ const sendReminder = catchAsync(async (req, res) => {
   return ApiResponse.success(res, "Reminder sent successfully", result);
 });
 
+/**
+ * GET /api/v1/reminders/history
+ * Fetch paginated reminder history.
+ */
+const getReminderHistory = catchAsync(async (req, res) => {
+  const result = await reminderService.getReminderHistory(req.shopId, req.query);
+  return ApiResponse.success(res, "Reminder history fetched", result.reminders, result.meta);
+});
+
 module.exports = {
   sendReminder,
   getReminderHistory,
